@@ -1,0 +1,7 @@
+frontend/
+venv/
+dashboard.zip
+summa.py
+server/.env
+server/.tables
+server/db.sqlite3
