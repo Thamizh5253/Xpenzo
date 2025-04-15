@@ -1,78 +1,75 @@
 import React, { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
-import {  Navigate } from "react-router-dom";
+import { useSearchParams, Navigate } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
-
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import { showSuccessToast, showErrorToast } from '../../utils/toaster'; // Adjust path as needed
+import Header from '../layouts/AuthHeader';
 
 const ResetPassword = () => {
   const navigate = useNavigate();
-
-
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [status, setStatus] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
 
   if (!token) {
+    showErrorToast('Invalid or missing reset token');
     return <Navigate to="/login" replace />;
-    // or return <div>Invalid or missing reset token.</div>;
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
 
     if (!password || !confirmPassword) {
-      return setStatus("Please fill in both fields.");
+      setIsLoading(false);
+      return showErrorToast("Please fill in both fields");
     }
 
     if (password !== confirmPassword) {
-      return setStatus("Passwords do not match.");
+      setIsLoading(false);
+      return showErrorToast("Passwords do not match");
     }
 
     try {
+      
       const res = await fetch('http://localhost:8000/api/auth/reset-password/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, new_password: password }),
       });
-     
-      console.log('Response:', res);
 
       const data = await res.json();
+      
       if (res.ok) {
-        setStatus('Password reset successful! You can now log in.');
-
-        // Optionally redirect to login page 
-        setTimeout(() => navigate('/login', { replace: true }), 2000); // Delay for user to read the message
-
-      } else {
-        setStatus(data.error || 'Something went wrong.');
-
-        <Navigate to="/login" replace />;
-
+        showSuccessToast('Password reset successful! Redirecting to login...');
         setTimeout(() => navigate('/login', { replace: true }), 2000);
+      } else {
+        showErrorToast(data.error || 'Failed to reset password');
       }
     } catch (err) {
-      setStatus('Server error. Please try again later.' , err);
+      showErrorToast('Server error. Please try again later.');
+      console.error('Reset password error:', err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
+
+    <>
+    <Header/>
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+      
       <div className="max-w-md w-full bg-white p-6 rounded-xl shadow-lg">
         <h2 className="text-2xl font-bold text-center mb-6">Reset Password</h2>
-
-        {status && (
-          <div className="text-sm text-center mb-4 text-red-600">{status}</div>
-        )}
 
         <form onSubmit={handleSubmit}>
           <div className="mb-4 relative">
@@ -105,13 +102,17 @@ const ResetPassword = () => {
 
           <button
             type="submit"
-            className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 transition"
+            disabled={isLoading}
+            className={`w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 transition ${
+              isLoading ? 'opacity-70 cursor-not-allowed' : ''
+            }`}
           >
-            Reset Password
+            {isLoading ? 'Processing...' : 'Reset Password'}
           </button>
         </form>
       </div>
     </div>
+    </>
   );
 };
 

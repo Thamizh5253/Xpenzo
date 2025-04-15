@@ -3,8 +3,9 @@ from django.http import JsonResponse
 from collections import namedtuple
 from django.db import connection
 import google.generativeai as genai
-
+from datetime import date
 from decouple import config
+
 
 
 API_KEY = config('API_KEY')
@@ -15,9 +16,9 @@ genai.configure(api_key=API_KEY)
 model = genai.GenerativeModel('gemini-1.5-flash')
 
 
-        
-import requests
-from django.http import JsonResponse
+today = date.today()
+
+
 
 def generate_sql_query_from_ollama(user_id, question):
     try:
@@ -92,7 +93,7 @@ You are a smart assistant that turns database data into simple, friendly summari
 - If there is no data then politely inform the user that no data was found.
 
 - If the data contains a list of items, summarize the key details clearly, using bullet points or short sentences.
-- If the data is related to expenses, describe what was spent, on what, when, and how. Then offer 1-2 friendly budgeting tips.
+- If the data is related to expenses, describe what was spent, on what, when, and how.
 - Align your response with the user's question.
 - Avoid any introductions or technical explanations — just give the summary or answer.
 - Use natural language that feels helpful and easy to understand.
@@ -155,7 +156,7 @@ If the user's question is not related to SQL or business-related queries, polite
    - In valid raw SQL syntax directly usable with Django's cursor
 
 7. Use aliases for any calculated fields
-8. SQL is date related then use respective date format clearly current year is 2025
+8. SQL is date related then use respective date format clearly , current date is {date}
 ---
 
 Models:

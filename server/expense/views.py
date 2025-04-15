@@ -67,7 +67,7 @@ def expense_list(request):
                 status=status.HTTP_422_UNPROCESSABLE_ENTITY
             )
             # user_profile = UserProfile.objects.get(user=request.user)
-
+            print("Total expenses for the month:", total_expenses , "Monthly budget:", user_profile.monthly_budget)
             # Check if total exceeds budget
             if total_expenses > user_profile.monthly_budget:
                 print("Total expenses exceed budget!")

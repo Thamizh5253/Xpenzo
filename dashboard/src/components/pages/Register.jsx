@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
-
+import Headers from "../layouts/AuthHeader";
 const Register = () => {
   const [formData, setFormData] = useState({ username: "", email: "", password: "" });
   const [message, setMessage] = useState("");
@@ -32,6 +32,8 @@ const Register = () => {
   };
 
   return (
+    <>
+    <Headers />
     <div className="flex justify-center items-center min-h-screen bg-gray-100">
       <div className="w-full max-w-3xl bg-white shadow-lg rounded-lg flex flex-col md:flex-row overflow-hidden">
         {/* Lottie Animation Section */}
@@ -97,6 +99,7 @@ const Register = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

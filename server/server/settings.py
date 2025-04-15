@@ -32,11 +32,13 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
+    'django_celery_beat',
     'users',
     'expense',
     'ocr',
     'charts',
     'askai',
+    'expense_scheduler',
 ]
 
 MIDDLEWARE = [
@@ -127,11 +129,14 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+# settings.py
+
+TIME_ZONE = 'Asia/Kolkata'  # or your desired timezone
+USE_TZ = True  # Enables timezone-aware datetime
+
 
 USE_I18N = True
 
-USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
@@ -174,5 +179,9 @@ CACHES = {
     }
 }
 
+# Celery configuration
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
 
 

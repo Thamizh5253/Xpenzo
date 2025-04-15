@@ -9,10 +9,10 @@ from .models import UserProfile
 from .serializers import UserProfileSerializer
 
 from django.contrib.auth.models import User
-from django.core.mail import send_mail
-from django.conf import settings
+from .tasks import send_password_reset_email
 from django.core.cache import cache
 import uuid
+
 
 # Generate JWT tokens manually
 def get_tokens_for_user(user):
@@ -104,30 +104,31 @@ def get_user_profile(request):
 
 @api_view(["POST"])
 def forgot_password(request):
-    
     email = request.data.get('email')
 
     try:
         user = User.objects.get(email=email)
-        token = str(uuid.uuid4())
+        
+        # Check if reset already requested
+        cache_key = f'reset_requested_{user.username}'
+        if cache.get(cache_key):
+            return Response({'message': 'Reset link already sent.'}, status=200)
 
-        # Store token in cache for 30 minutes (1800 seconds)
-        cache.set(f'password_reset_{token}', user.username, timeout=1800)
+        # Generate and cache new token
+        token = str(uuid.uuid4())
+        cache.set(f'password_reset_{token}', user.username, timeout=1800)  # Store token -> username
+        cache.set(cache_key, True, timeout=1800)  # Store flag that reset was requested
 
         reset_link = f"http://localhost:5173/reset-password?token={token}"
 
-        send_mail(
-            'Reset Your Password',
-            f'Click the link to reset your password: {reset_link}',
-            settings.DEFAULT_FROM_EMAIL,
-            [email],
-            fail_silently=False,
-        )
+        # Send email in background
+        send_password_reset_email.delay(email, reset_link)
 
         return Response({'message': 'Password reset email sent.'})
-
+    
     except User.DoesNotExist:
         return Response({'error': 'Email not found.'}, status=404)
+
 
 @api_view(["POST"])
 def reset_password(request):

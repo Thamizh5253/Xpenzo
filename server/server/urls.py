@@ -7,6 +7,7 @@ urlpatterns = [
     path('expense/', include('expense.urls')),  # route for expense app
     path('ocr/', include('ocr.urls')),
     path('analytics/', include('charts.urls')),
-    path('askai/', include('askai.urls'))
+    path('askai/', include('askai.urls')),
+    path('scheduler/', include('expense_scheduler.urls')),
 
 ]

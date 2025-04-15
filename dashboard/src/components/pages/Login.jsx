@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import Headers from "../layouts/AuthHeader";
+import { showSuccessToast, showErrorToast } from "../../utils/toaster"; // Adjust path as needed
 
 const Login = ({ setAuth }) => {
   const [formData, setFormData] = useState({ username: "", password: "" });
   const [message, setMessage] = useState("");
-  const [forgotPasswordModal, setForgotPasswordModal] = useState(true);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -26,26 +27,32 @@ const Login = ({ setAuth }) => {
       if (response.ok) {
         localStorage.setItem("accessToken", data.tokens.access);
         localStorage.setItem("refreshToken", data.tokens.refresh);
-        setAuth(true);
+        
         if (!data.profile_exists) {
-          setMessage("⚠️ Profile incomplete! Redirecting to setup...");
+          // setMessage("⚠️ Profile incomplete! Redirecting to setup...");
+          showSuccessToast("Profile incomplete! Redirecting to setup...");
           setTimeout(() => navigate("/profile-setup"), 2000);
         } else {
-          setMessage("✅ Login successful! Redirecting...");
+          // setMessage("✅ Login successful! Redirecting...");
+          showSuccessToast("Login successful! Redirecting...");
           setTimeout(() => navigate("/dashboard"), 2000);
         }
+        setAuth(true);
       } else {
-        setMessage(`❌ ${data.error || "Invalid credentials"}`);
+        // setMessage(`❌ ${data.error || "Invalid credentials"}`);
+        showErrorToast(data.error || "Invalid credentials");
       }
     } catch (error) {
       console.error("Login error:", error);
-      setMessage("⚠️ An error occurred. Please try again.");
+      // setMessage("⚠️ An error occurred. Please try again.");
+      showErrorToast("An error occurred. Please try again.");
     }
   };
   
 
   return (
     <>
+    <Headers  />
     <div className="flex justify-center items-center min-h-screen bg-gray-100">
       <div className="w-full max-w-3xl bg-white shadow-lg rounded-lg flex flex-col md:flex-row overflow-hidden">
         {/* Lottie Animation Section */}

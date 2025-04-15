@@ -99,19 +99,31 @@ export default function ExpenseTable() {
     setShowModal(true);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this item?");
+    if (!confirmDelete) return;
+  
     const token = localStorage.getItem("accessToken");
-    axios
-      .delete(`http://127.0.0.1:8000/expense/${id}/`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then(() => {
-        setExpenses((prev) => prev.filter((exp) => exp.id !== id))
+  
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/expense/${id}/`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      if (response.ok) {
+        setExpenses((prev) => prev.filter((exp) => exp.id !== id));
         setRefreshCapsule((prev) => !prev);
-        // console.log(refreshCapsule)
-  })
-      .catch((err) => console.error("Error deleting expense:", err));
+      } else {
+        console.error("Failed to delete expense:", await response.text());
+      }
+    } catch (err) {
+      console.error("Error deleting expense:", err);
+    }
   };
+  
   const closeModal = () => {
     setShowModal(false);
     setIsEditing(false);

@@ -1,22 +1,18 @@
 import React, { useState } from "react";
+import { showSuccessToast, showErrorToast  } from "../../utils/toaster";
+import Header from "../layouts/AuthHeader";
+
+
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-  // const handleSubmit = (e) => {
-  //   e.preventDefault();
-
-  //   // Simulate API call
-  //   console.log("Sending reset link to:", email);
-  //   setSubmitted(true);
-  // };
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // setIsLoading(true);
-    // setError('');
+    setIsLoading(true);
   
     try {
       const response = await fetch('http://127.0.0.1:8000/api/auth/forgot-password/', {
@@ -28,30 +24,37 @@ export default function ForgotPassword() {
       });
   
       const data = await response.json();
-  
+      console.log('Response:', data);
       if (!response.ok) {
         throw new Error(data.message || 'Failed to send reset link');
       }
   
       setSubmitted(true);
+      showSuccessToast(data.message || 'Reset link sent successfully!');
     } catch (err) {
-      // setError(err.message || 'Something went wrong. Please try again.');
+      showErrorToast(err.message || 'Something went wrong. Please try again.');
       console.error('Password reset error:', err);
     } finally {
-      // setIsLoading(false);
+      setIsLoading(false);
     }
   };
 
   return (
+    <>
+    <Header />
     <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
+     
       <div className="w-full max-w-md bg-white rounded-2xl shadow-md p-6">
+  
+    
+  
         {!submitted ? (
           <>
             <h2 className="text-2xl font-semibold text-center text-gray-800 mb-4">
               Forgot Your Password?
             </h2>
             <p className="text-sm text-gray-600 text-center mb-6">
-              Enter your registered email and we’ll send you a reset link.
+              Enter your registered email and we'll send you a reset link.
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -71,10 +74,12 @@ export default function ForgotPassword() {
 
               <button
                 type="submit"
-                className="w-full bg-blue-500 text-white py-2 rounded-xl hover:bg-blue-600 transition duration-200"
-                // className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 transition"
+                disabled={isLoading}
+                className={`w-full bg-blue-500 text-white py-2 rounded-xl hover:bg-blue-600 transition duration-200 ${
+                  isLoading ? 'opacity-70 cursor-not-allowed' : ''
+                }`}
               >
-                Send Reset Link
+                {isLoading ? 'Sending...' : 'Send Reset Link'}
               </button>
             </form>
           </>
@@ -88,5 +93,6 @@ export default function ForgotPassword() {
         )}
       </div>
     </div>
+    </>
   );
 }
