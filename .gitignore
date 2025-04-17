@@ -5,3 +5,4 @@ summa.py
 server/.env
 server/.tables
 server/db.sqlite3
+dashboard/.env

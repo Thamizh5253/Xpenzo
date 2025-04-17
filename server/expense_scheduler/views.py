@@ -19,11 +19,14 @@ def create_or_update_schedule(request, schedule_id=None):
         else:
             schedule = ExpenseSchedule(user=request.user)
             created = True
-
+        print(request.data)
         serializer = ExpenseScheduleSerializer(schedule, data=request.data, partial=True)
         if serializer.is_valid():
-            serializer.save(user=request.user)
+            serializer.save()
+            print(request.data)
+
             return Response(serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+        print(serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     except Exception as e:

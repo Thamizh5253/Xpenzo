@@ -1,40 +1,35 @@
 import React, { useState } from "react";
 import { showSuccessToast, showErrorToast  } from "../../utils/toaster";
-import Header from "../layouts/AuthHeader";
-
+import Header from "../../components/layouts/AuthHeader";
+import BASE_URL from "../../config";
+import axios from 'axios';
 
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
   
+
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/auth/forgot-password/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      });
-  
-      const data = await response.json();
+      const response = await axios.post(`${BASE_URL}/api/auth/forgot-password/`, { email });
+
+      const data = response.data;
       console.log('Response:', data);
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to send reset link');
-      }
-  
+
       setSubmitted(true);
       showSuccessToast(data.message || 'Reset link sent successfully!');
-    } catch (err) {
-      showErrorToast(err.message || 'Something went wrong. Please try again.');
-      console.error('Password reset error:', err);
-    } finally {
+
+    } catch (error) {
+      console.error('Error:', error);
+      const message = error.response?.data?.message || 'Failed to send reset link';
+      showErrorToast(message);
+    }
+ finally {
       setIsLoading(false);
     }
   };

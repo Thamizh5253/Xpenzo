@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, BarChart, PlusCircle, Scan, Info, Menu  ,User ,Bot} from "lucide-react";
+import { Home, BarChart, PlusCircle, Scan, Info, Menu  ,User ,Bot ,CalendarClock} from "lucide-react";
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
   const location = useLocation();
@@ -9,11 +9,11 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     { name: "Analysis", icon: <BarChart size={20} />, path: "/charts" },
     { name: "New Expense", icon: <PlusCircle size={20} />, path: "/new-expense" },
     { name: "Scan Bills", icon: <Scan size={20} />, path: "/ocr" },
-    { name: "Profile", icon: <User size={20} />, path: "/profile" },
+    {name:"Schedules", icon:<CalendarClock size={20} />, path:"/schedules"},
     { name: "ASKai", icon: <Bot size={20} />, path: "/askai" },
+    { name: "Profile", icon: <User size={20} />, path: "/profile" },
     { name: "About", icon: <Info size={20} />, path: "/about" },
   ];
-
   return (
     <div
       className={`bg-white shadow-lg ${

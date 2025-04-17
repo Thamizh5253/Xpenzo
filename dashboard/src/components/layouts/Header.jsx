@@ -1,4 +1,4 @@
-import Profile  from "../pages/ProfileModal";
+import Profile  from "../../pages/ProfileModal";
 
 const Header = ( { setAuth } ) => {
     return (

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import ExpenseTrackerCharts from './Charts';
+import BASE_URL from '../config';
 
 const BaseExpenseTracker = () => {
     const [data, setData] = useState(null);
@@ -10,11 +11,11 @@ const BaseExpenseTracker = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const summaryResponse = await fetch('http://127.0.0.1:8000/analytics/summary/', {
+                const summaryResponse = await fetch(`${BASE_URL}/analytics/summary/`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 
-                const categoryResponse = await fetch('http://127.0.0.1:8000/analytics/category-wise/', {
+                const categoryResponse = await fetch(`${BASE_URL}/analytics/category-wise/`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
 

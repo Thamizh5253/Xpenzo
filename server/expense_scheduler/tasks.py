@@ -83,7 +83,6 @@ def process_expense_schedules():
 
 
 @shared_task
-@shared_task
 def send_expense_email(user_email, user_name, amount, description, date):
     subject = "📅 Your Scheduled Expense Has Been Added - Xpenzo"
     message = (
@@ -98,7 +97,7 @@ def send_expense_email(user_email, user_name, amount, description, date):
         f"Thanks for using Xpenzo 💙\n"
         f"— The Xpenzo Team"
     )
-    
+
     from_email = settings.DEFAULT_FROM_EMAIL # Update this to match your domain
 
     send_mail(subject, message, from_email, [user_email])

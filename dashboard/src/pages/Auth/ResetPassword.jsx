@@ -3,7 +3,10 @@ import { useSearchParams, Navigate } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import { showSuccessToast, showErrorToast } from '../../utils/toaster'; // Adjust path as needed
-import Header from '../layouts/AuthHeader';
+import Header from '../../components/layouts/AuthHeader';
+import BASE_URL from '../../config';
+import axios from 'axios';
+
 
 const ResetPassword = () => {
   const navigate = useNavigate();
@@ -38,28 +41,24 @@ const ResetPassword = () => {
       return showErrorToast("Passwords do not match");
     }
 
-    try {
-      
-      const res = await fetch('http://localhost:8000/api/auth/reset-password/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, new_password: password }),
-      });
 
-      const data = await res.json();
-      
-      if (res.ok) {
-        showSuccessToast('Password reset successful! Redirecting to login...');
-        setTimeout(() => navigate('/login', { replace: true }), 2000);
-      } else {
-        showErrorToast(data.error || 'Failed to reset password');
-      }
+    try {
+      const res = await axios.post(`${BASE_URL}/api/auth/reset-password/`, {
+        token,
+        new_password: password,
+      });
+    
+      showSuccessToast('Password reset successful! Redirecting to login...');
+      setTimeout(() => navigate('/login', { replace: true }), 2000);
+    
     } catch (err) {
-      showErrorToast('Server error. Please try again later.');
+      const errorMsg = err.response?.data?.error || 'Failed to reset password';
+      showErrorToast(errorMsg);
       console.error('Reset password error:', err);
     } finally {
       setIsLoading(false);
     }
+    
   };
 
   return (

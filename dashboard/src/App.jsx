@@ -2,11 +2,11 @@ import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-d
 import { useState, useEffect } from "react";
 import Sidebar from "./components/layouts/Sidebar";
 import Header from "./components/layouts/Header";
-import Login from "./components/pages/Login";
-import Register from "./components/pages/Register";
-import AppRoutes from "./components/routes/AppRoutes";
-import ForgotPassword from "./components/pages/ForgotPassword";                                                                                                  
-import ResetPassword from "./components/pages/ResetPassword";
+import Login from "./pages/Auth/Login";
+import Register from "./pages/Auth/Register";
+import AppRoutes from "./routes/AppRoutes";
+import ForgotPassword from "./pages/Auth/ForgotPassword";                                                                                                  
+import ResetPassword from "./pages/Auth/ResetPassword";
 
 function App() {
   const [isOpen, setIsOpen] = useState(true);

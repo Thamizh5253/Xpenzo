@@ -1,9 +1,14 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
-import Headers from "../layouts/AuthHeader";
-const Register = () => {
-  const [formData, setFormData] = useState({ username: "", email: "", password: "" });
+import Headers from "../../components/layouts/Header"; // Adjust path as needed
+import { showSuccessToast, showErrorToast } from "../../utils/toaster"; // Adjust path as needed
+import BASE_URL from "../../config";
+import axios from 'axios';
+
+
+const Login = ({ setAuth }) => {
+  const [formData, setFormData] = useState({ username: "", password: "" });
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
@@ -13,33 +18,41 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/auth/register/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-      const data = await response.json();
-      if (response.ok) {
-        setMessage("✅ Registration successful! Redirecting...");
-        setTimeout(() => navigate("/login"), 2000);
+      const response = await axios.post(`${BASE_URL}/api/auth/login/`, formData);
+      const data = response.data;
+
+      localStorage.setItem("accessToken", data.tokens.access);
+      localStorage.setItem("refreshToken", data.tokens.refresh);
+
+      if (!data.profile_exists) {
+        showSuccessToast("Profile incomplete! Redirecting to setup...");
+        setTimeout(() => navigate("/profile-setup"), 2000);
       } else {
-        setMessage(data.error || "❌ Registration failed");
+        showSuccessToast("Login successful! Redirecting...");
+        setTimeout(() => navigate("/dashboard"), 2000);
       }
+
+      setAuth(true);
     } catch (error) {
-      setMessage("⚠️ An error occurred");
+      console.error("Login error:", error);
+      const errorMsg = error.response?.data?.error || "Invalid credentials";
+      showErrorToast(errorMsg);
     }
+
   };
+  
 
   return (
     <>
-    <Headers />
+    <Headers  />
     <div className="flex justify-center items-center min-h-screen bg-gray-100">
       <div className="w-full max-w-3xl bg-white shadow-lg rounded-lg flex flex-col md:flex-row overflow-hidden">
         {/* Lottie Animation Section */}
         <div className="md:w-1/2 flex justify-center items-center p-4 bg-blue-50">
           <DotLottieReact
-            src="https://lottie.host/9609c43d-0656-44d8-ba07-7091bdb74643/BfTznYVkNT.lottie"
+            src="https://lottie.host/57e7ecf3-af77-4460-98c4-820b5a8df60a/ilUAkNvREw.lottie"
             loop
             autoplay
             style={{ width: "100%", maxWidth: "300px" }}
@@ -47,7 +60,7 @@ const Register = () => {
         </div>
         {/* Form Section */}
         <div className="md:w-1/2 p-8">
-          <h2 className="text-2xl font-bold text-gray-800 text-center mb-6">Register</h2>
+          <h2 className="text-2xl font-bold text-gray-800 text-center mb-6">Login</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-600">Username</label>
@@ -55,17 +68,6 @@ const Register = () => {
                 type="text"
                 name="username"
                 placeholder="Enter username"
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-2 mt-1 border rounded-md focus:ring-2 focus:ring-blue-400 outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-600">Email</label>
-              <input
-                type="email"
-                name="email"
-                placeholder="Enter email"
                 onChange={handleChange}
                 required
                 className="w-full px-4 py-2 mt-1 border rounded-md focus:ring-2 focus:ring-blue-400 outline-none"
@@ -82,25 +84,31 @@ const Register = () => {
                 className="w-full px-4 py-2 mt-1 border rounded-md focus:ring-2 focus:ring-blue-400 outline-none"
               />
             </div>
+            <div> 
+            <a href="/forgot-password" className="text-sm text-blue-500 hover:underline">
+             Forgot Password?
+             </a>
+            </div>
             <button
               type="submit"
               className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 transition"
             >
-              Register
+              Login
             </button>
           </form>
           {message && <p className="mt-4 text-center text-sm font-medium text-red-500">{message}</p>}
           <p className="mt-4 text-center text-sm">
-            Already have an account?{" "}
-            <a href="/login" className="text-blue-500 hover:underline">
-              Login here
+            Don't have an account?{" "}
+            <a href="/register" className="text-blue-500 hover:underline">
+              Register here
             </a>
           </p>
         </div>
       </div>
     </div>
-    </>
+
+  </>
   );
 };
 
-export default Register;
+export default Login;

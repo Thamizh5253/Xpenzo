@@ -1,4 +1,7 @@
 import React, { useEffect, useState } from "react";
+import axios from 'axios';
+import BASE_URL from "../config";
+
 
 const ExpenseSavingCapsule = ({ refreshCapsule }) => {
   const [income, setIncome] = useState(0);
@@ -21,36 +24,31 @@ const ExpenseSavingCapsule = ({ refreshCapsule }) => {
 
   // Fetch income only once on first render
   useEffect(() => {
-    const fetchData = async () => {
-      const token = localStorage.getItem("accessToken");
-  
+    const fetchData = async () => {  
       try {
+        const token = localStorage.getItem("accessToken");
+      
         const [profileResponse, expenseResponse] = await Promise.all([
-          fetch("http://127.0.0.1:8000/api/auth/profile/", {
+          axios.get(`${BASE_URL}/api/auth/profile/`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
-          fetch("http://127.0.0.1:8000/analytics/monthly-trend/", {
+          axios.get(`${BASE_URL}/analytics/monthly-trend/`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
         ]);
-  
-        const profileData = await profileResponse.json();
-        const expenseData = await expenseResponse.json();
-  
+      
+        const profileData = profileResponse.data;
+        const expenseData = expenseResponse.data;
+      
         const fetchedIncome = parseFloat(profileData.income);
         const fetchedExpenses = parseFloat(expenseData.current_month_total);
-  
+      
         smoothNumberTransition(0, isNaN(fetchedIncome) ? 0 : fetchedIncome, setIncome);
         smoothNumberTransition(0, isNaN(fetchedExpenses) ? 0 : fetchedExpenses, setExpenses);
-  
-        // console.log("Fetched Expenses:", fetchedExpenses);
-        // console.log("Fetched Income:", fetchedIncome);
-        // console.log("Fetched Saving:", fetchedIncome - fetchedExpenses);
-  
         smoothNumberTransition(0, fetchedIncome - fetchedExpenses, setSavings);
-  
+      
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error("Error fetching data with axios:", error);
       }
     };
   

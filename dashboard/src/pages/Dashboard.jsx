@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { FaPlus, FaCamera ,FaSignOutAlt ,FaChartPie ,FaUserCircle} from "react-icons/fa";
-// import Profile from "./ProfileModal";
 import ExpenseCapsule from "./ExpenseCapsule";
+import BASE_URL from "../config";
 
 
 export default function ExpenseTable() {
@@ -48,7 +47,7 @@ export default function ExpenseTable() {
     }
 
     axios
-      .get("http://127.0.0.1:8000/expense/", {
+      .get(`${BASE_URL}/expense/`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((response) => setExpenses(response.data))
@@ -67,8 +66,8 @@ export default function ExpenseTable() {
   const handleCreateExpense = () => {
     const token = localStorage.getItem("accessToken");
     const url = isEditing
-      ? `http://127.0.0.1:8000/expense/${currentExpenseId}/`
-      : "http://127.0.0.1:8000/expense/";
+      ? `${BASE_URL}/expense/${currentExpenseId}/`
+      : `${BASE_URL}/expense/`;
 
     const request = isEditing
       ? axios.put(url, newExpense, { headers: { Authorization: `Bearer ${token}` } })
@@ -105,23 +104,25 @@ export default function ExpenseTable() {
   
     const token = localStorage.getItem("accessToken");
   
+
     try {
-      const response = await fetch(`http://127.0.0.1:8000/expense/${id}/`, {
-        method: "DELETE",
+      const response = await axios.delete(`${BASE_URL}/expense/${id}/`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-  
-      if (response.ok) {
+
+      if (response.status === 204 || response.status === 200) {
         setExpenses((prev) => prev.filter((exp) => exp.id !== id));
         setRefreshCapsule((prev) => !prev);
       } else {
-        console.error("Failed to delete expense:", await response.text());
+        console.error("Failed to delete expense:", response);
       }
+
     } catch (err) {
       console.error("Error deleting expense:", err);
     }
+
   };
   
   const closeModal = () => {

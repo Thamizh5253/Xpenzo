@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import BASE_URL from '../config';
 
 const ChatBox = () => {
   const [messages, setMessages] = useState([]);
@@ -24,7 +25,7 @@ const ChatBox = () => {
       
       try {
         const res = await axios.get(
-          'http://localhost:8000/askai/history/',
+          `${BASE_URL}/askai/history/`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -74,7 +75,7 @@ const ChatBox = () => {
   
     try {
       const res = await axios.post(
-        'http://localhost:8000/askai/',
+        `${BASE_URL}/askai/`,
         { question },
         {
           headers: {

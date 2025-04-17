@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import BASE_URL from "../config";
 
 export default function CreateExpense() {
   const [error, setError] = useState(null);
@@ -44,7 +45,7 @@ export default function CreateExpense() {
     }
 
     axios
-      .post("http://127.0.0.1:8000/expense/", newExpense, {
+      .post(`${BASE_URL}/expense/`, newExpense, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then(() => {

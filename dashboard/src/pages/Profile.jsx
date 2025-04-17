@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from 'axios';
+import BASE_URL from "../config";
+
 
 const ProfileForm = () => {
     const [formData, setFormData] = useState({
@@ -18,25 +21,29 @@ const ProfileForm = () => {
     // Fetch profile data on component mount
     useEffect(() => {
         const fetchProfile = async () => {
+
             try {
-                const response = await fetch("http://127.0.0.1:8000/api/auth/profile/", {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-                    },
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    setFormData(data); // Pre-fill the form with existing data
-                    setOriginalData(data); // Store original data for cancel functionality
-                    setIsEditing(true); // Enable edit mode
-                } else if (response.status === 404) {
-                    setMessage("You have not set up your profile yet.");
-                    setIsEditing(false); // Disable edit mode
-                }
+              const response = await axios.get(`${BASE_URL}/api/auth/profile/`, {
+                headers: {
+                  Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+                },
+              });
+            
+              const data = response.data;
+              setFormData(data);         // Pre-fill the form with existing data
+              setOriginalData(data);     // Store original data for cancel functionality
+              setIsEditing(true);        // Enable edit mode
+            
             } catch (error) {
+              if (error.response && error.response.status === 404) {
+                setMessage("You have not set up your profile yet.");
+                setIsEditing(false);    // Disable edit mode
+              } else {
                 console.error("Error fetching profile:", error);
                 setMessage("⚠️ An error occurred while fetching profile data.");
+              }
             }
+            
         };
 
         fetchProfile();
@@ -49,30 +56,37 @@ const ProfileForm = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
         try {
-            const url = "http://127.0.0.1:8000/api/auth/profile/create_or_update/";
-            const method = isEditing ? "PUT" : "POST"; // Use PUT for updates, POST for creation
-            const response = await fetch(url, {
-                method,
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-                },
-                body: JSON.stringify(formData),
-            });
-            const data = await response.json();
-            if (response.ok) {
-                setMessage("✅ Profile saved successfully!");
-                setOriginalData(formData); // Update original data after saving
-                if (!isEditing) {
-                    setTimeout(() => navigate("/dashboard"), 2000); // Redirect after setup
-                }
-            } else {
-                setMessage("❌ Failed to save profile");
+        const url = `${BASE_URL}/api/auth/profile/create_or_update/`;
+        const method = isEditing ? "PUT" : "POST"; // Use PUT for updates, POST for creation
+
+        const response = await axios({
+            method,
+            url,
+            headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+            },
+            data: formData,
+        });
+
+        const data = response.data;
+
+        if (response.status === 200) {
+            setMessage("✅ Profile saved successfully!");
+            setOriginalData(formData); // Update original data after saving
+            if (!isEditing) {
+            setTimeout(() => navigate("/dashboard"), 2000); // Redirect after setup
             }
-        } catch (error) {
-            setMessage("⚠️ An error occurred");
+        } else {
+            setMessage("❌ Failed to save profile");
         }
+        } catch (error) {
+        console.error("Error saving profile:", error);
+        setMessage("⚠️ An error occurred");
+        }
+
     };
 
     const handleCancel = () => {

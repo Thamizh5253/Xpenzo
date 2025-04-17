@@ -25,9 +25,9 @@ class ExpenseScheduleSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["user", "next_occurrence", "last_processed", "created_at", "updated_at"]
 
-    def create(self, validated_data):
-        validated_data["user"] = self.context["request"].user
-        return super().create(validated_data)
+    # def create(self, validated_data):
+    #     validated_data["user"] = self.context["request"].user
+    #     return super().create(validated_data)
 
-    def update(self, instance, validated_data):
-        return super().update(instance, validated_data)
+    # def update(self, instance, validated_data):
+    #     return super().update(instance, validated_data)

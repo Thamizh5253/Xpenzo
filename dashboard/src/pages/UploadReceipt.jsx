@@ -2,6 +2,7 @@ import React from "react";
 import axios from "axios";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import BASE_URL from "../config";
 
 const UploadReceipt = () => {
   const [file, setFile] = useState(null);
@@ -12,8 +13,7 @@ const UploadReceipt = () => {
   const [expenses, setExpenses] = useState([]);
   const [showModal, setShowModal] = useState(false);
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [currentExpenseId, setCurrentExpenseId] = useState(null);
+
 
   const [newExpense, setNewExpense] = useState({
     amount: "",
@@ -63,7 +63,7 @@ const UploadReceipt = () => {
       const token = localStorage.getItem("accessToken");
 
       const response = await axios.post(
-        "http://localhost:8000/ocr/extract-receipt/",
+        `${BASE_URL}/ocr/extract-receipt/`,
         formData,
         {
           headers: {
@@ -91,7 +91,7 @@ const UploadReceipt = () => {
 
   const handleCreateExpense = () => {
     const token = localStorage.getItem("accessToken");
-    const url = "http://127.0.0.1:8000/expense/";
+    const url = `${BASE_URL}/expense/`;
   
     axios
       .post(url, newExpense, { headers: { Authorization: `Bearer ${token}` } })

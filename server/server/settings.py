@@ -67,7 +67,7 @@ ALLOWED_HOSTS = ["localhost", "127.0.0.1", "192.168.0.136"]
 CORS_ALLOW_CREDENTIALS = True  # Allow cookies and authentication
 
 # If you want to allow all origins (not recommended for production)
-# CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = True
 
 TEMPLATES = [
     {
