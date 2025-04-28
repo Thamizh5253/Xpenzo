@@ -8,6 +8,7 @@ import Profile from "../pages/Profile";
 import NewExpense from "../pages/NewExpense";
 import AskAI from "../pages/AskAI";
 import Schedule from "../pages/Schedules/Schedule";
+import SplitDashboard from "../pages/Split Expense/SplitDashboard";
 // import About from "../pages/About";
 
 const AppRoutes = () => {
@@ -24,7 +25,7 @@ const AppRoutes = () => {
       <Route path="/profile" element={<Profile />} />
       <Route path="/askai" element={<AskAI />} />
       <Route path="/schedules" element={<Schedule />} />
-
+      <Route path="/split" element={<SplitDashboard />} />
       {/* <Route path="/about" element={<About />} /> */}
     </Routes>
   );

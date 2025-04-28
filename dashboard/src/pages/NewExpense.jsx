@@ -2,10 +2,12 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import BASE_URL from "../config";
+import { useAuth } from "../context/AuthContext"; // Adjust the path as needed
 
 export default function CreateExpense() {
   const [error, setError] = useState(null);
 
+  const { accessToken } = useAuth(); // Use the access token from context
   const [newExpense, setNewExpense] = useState({
     amount: "",
     category: "",
@@ -38,15 +40,15 @@ export default function CreateExpense() {
   };
 
   const handleCreateExpense = () => {
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
+    // const token = localStorage.getItem("accessToken");
+    if (!accessToken) {
       navigate("/login");
       return;
     }
 
     axios
       .post(`${BASE_URL}/expense/`, newExpense, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${accessToken}` },
       })
       .then(() => {
         setNewExpense({

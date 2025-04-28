@@ -13,6 +13,8 @@ from .tasks import send_password_reset_email
 from django.core.cache import cache
 import uuid
 
+# views.py
+from .serializers import UserMiniSerializer
 
 # Generate JWT tokens manually
 def get_tokens_for_user(user):
@@ -156,3 +158,14 @@ def reset_password(request):
 
     except User.DoesNotExist:
         return Response({'error': 'User not found.'}, status=404)
+
+
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_possible_group_members(request):
+    # Exclude current user
+    users = User.objects.exclude(id=request.user.id)
+    serializer = UserMiniSerializer(users, many=True)
+    return Response(serializer.data)

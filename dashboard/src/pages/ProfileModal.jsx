@@ -2,15 +2,17 @@ import { useState, useEffect, useRef } from "react";
 import { FaUserCircle } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { FiLogOut } from "react-icons/fi";
+import { useAuth } from "../context/AuthContext"; // Adjust the path as needed
 
 export default function UserDropdown({ setAuth }) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+  const { clearTokens } = useAuth(); // Use the clearAuth function from context
 
   const handleLogout = () => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
+   
+    clearTokens();
     setAuth(false);
     navigate("/login");
   };

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import ExpenseCapsule from "./ExpenseCapsule";
 import BASE_URL from "../config";
+import {useAuth} from "../context/AuthContext"; // Adjust the path as needed
 
 
 export default function ExpenseTable() {
@@ -13,6 +14,9 @@ export default function ExpenseTable() {
   const [isEditing, setIsEditing] = useState(false);
   const [currentExpenseId, setCurrentExpenseId] = useState(null);
   const [refreshCapsule, setRefreshCapsule] = useState(false);
+
+  const { accessToken , clearTokens } = useAuth(); // Access the token from context
+
   const [newExpense, setNewExpense] = useState({
     amount: "",
     category: "",
@@ -40,19 +44,19 @@ export default function ExpenseTable() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
+    if (!accessToken) {
       navigate("/login");
       return;
     }
 
     axios
       .get(`${BASE_URL}/expense/`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${accessToken}` },
       })
       .then((response) => setExpenses(response.data))
       .catch(() => {
-        localStorage.removeItem("accessToken");
+        // localStorage.removeItem("accessToken");
+      clearTokens();
         navigate("/login");
       });
   }, [navigate]);
@@ -64,14 +68,14 @@ export default function ExpenseTable() {
   
 
   const handleCreateExpense = () => {
-    const token = localStorage.getItem("accessToken");
+
     const url = isEditing
       ? `${BASE_URL}/expense/${currentExpenseId}/`
       : `${BASE_URL}/expense/`;
 
     const request = isEditing
-      ? axios.put(url, newExpense, { headers: { Authorization: `Bearer ${token}` } })
-      : axios.post(url, newExpense, { headers: { Authorization: `Bearer ${token}` } });
+      ? axios.put(url, newExpense, { headers: { Authorization: `Bearer ${accessToken}` } })
+      : axios.post(url, newExpense, { headers: { Authorization: `Bearer ${accessToken}` } });
 
     request
       .then((response) => {
@@ -102,13 +106,13 @@ export default function ExpenseTable() {
     const confirmDelete = window.confirm("Are you sure you want to delete this item?");
     if (!confirmDelete) return;
   
-    const token = localStorage.getItem("accessToken");
+    // const token = localStorage.getItem("accessToken");
   
 
     try {
       const response = await axios.delete(`${BASE_URL}/expense/${id}/`, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${clearTokens}`,
         },
       });
 

@@ -3,6 +3,7 @@ import axios from "axios";
 import BASE_URL from "../../config";
 import { X, Calendar, Clock, Repeat, Tag, CreditCard, Info, DollarSign } from "react-feather";
 import { IndianRupee } from "lucide-react";
+import {useAuth} from '../../context/AuthContext'; // Adjust the path as needed
 
 
 const AddScheduleModal = ({ isOpen, onClose, onCreated , onEdited, editData , setSelectedSchedule }) => {
@@ -19,7 +20,7 @@ const AddScheduleModal = ({ isOpen, onClose, onCreated , onEdited, editData , se
     is_active: true,
   };
 
-
+  const { accessToken } = useAuth(); // Use the access token from context
   const [formData, setFormData] = useState(initialFormData);
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 2;
@@ -79,15 +80,16 @@ const AddScheduleModal = ({ isOpen, onClose, onCreated , onEdited, editData , se
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
+    // const token = localStorage.getItem("accessToken");
+
+    if (!accessToken) {
       navigate("/login");
       return;
     }
   
     try {
       const headers = {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${accessToken}`,
       };
   
       if (editData?.id) {

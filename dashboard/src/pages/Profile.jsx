@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from 'axios';
 import BASE_URL from "../config";
-
+import { useAuth } from "../context/AuthContext"; // Adjust the path as needed
 
 const ProfileForm = () => {
     const [formData, setFormData] = useState({
@@ -17,7 +17,7 @@ const ProfileForm = () => {
     const [message, setMessage] = useState("");
     const [isEditing, setIsEditing] = useState(false); // Track if the form is in edit mode
     const navigate = useNavigate();
-
+    const { accessToken } = useAuth(); // Use the access token from context
     // Fetch profile data on component mount
     useEffect(() => {
         const fetchProfile = async () => {
@@ -25,7 +25,7 @@ const ProfileForm = () => {
             try {
               const response = await axios.get(`${BASE_URL}/api/auth/profile/`, {
                 headers: {
-                  Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+                  Authorization: `Bearer ${accessToken}`,
                 },
               });
             

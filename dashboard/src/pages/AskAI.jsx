@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import BASE_URL from '../config';
+import {useAuth}  from '../context/AuthContext'; // Adjust the path as needed
 
 const ChatBox = () => {
   const [messages, setMessages] = useState([]);
@@ -9,6 +10,7 @@ const ChatBox = () => {
   const [historyLoading, setHistoryLoading] = useState(true);
   const messagesEndRef = useRef(null);
 
+  const { accessToken } = useAuth(); // Use the access token from context
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
@@ -21,14 +23,15 @@ const ChatBox = () => {
   // Fetch chat history on component mount
   useEffect(() => {
     const fetchChatHistory = async () => {
-      const token = localStorage.getItem('accessToken');
+      // const token = localStorage.getItem('accessToken');
+
       
       try {
         const res = await axios.get(
           `${BASE_URL}/askai/history/`,
           {
             headers: {
-              Authorization: `Bearer ${token}`,
+              Authorization: `Bearer ${accessToken}`,
             },
           }
         );
@@ -71,7 +74,7 @@ const ChatBox = () => {
     setQuestion('');
     setLoading(true);
   
-    const token = localStorage.getItem('accessToken');
+    // const token = localStorage.getItem('accessToken');
   
     try {
       const res = await axios.post(
@@ -79,7 +82,7 @@ const ChatBox = () => {
         { question },
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${accessToken}`,
           },
         }
       );

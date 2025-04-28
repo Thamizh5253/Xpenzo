@@ -3,6 +3,7 @@ import axios from "axios";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import BASE_URL from "../config";
+import { useAuth } from "../context/AuthContext"; // Adjust the path as needed
 
 const UploadReceipt = () => {
   const [file, setFile] = useState(null);
@@ -13,7 +14,7 @@ const UploadReceipt = () => {
   const [expenses, setExpenses] = useState([]);
   const [showModal, setShowModal] = useState(false);
 
-
+  const { accessToken } = useAuth(); // Use the access token from context
 
   const [newExpense, setNewExpense] = useState({
     amount: "",
@@ -60,7 +61,7 @@ const UploadReceipt = () => {
       setLoading(true);
       setError("");
 
-      const token = localStorage.getItem("accessToken");
+      // const token = localStorage.getItem("accessToken");
 
       const response = await axios.post(
         `${BASE_URL}/ocr/extract-receipt/`,
@@ -68,7 +69,7 @@ const UploadReceipt = () => {
         {
           headers: {
             "Content-Type": "multipart/form-data",
-            Authorization: token ? `Bearer ${token}` : "",
+            Authorization: accessToken ? `Bearer ${accessToken}` : "",
           },
         }
       );
@@ -90,11 +91,11 @@ const UploadReceipt = () => {
   };
 
   const handleCreateExpense = () => {
-    const token = localStorage.getItem("accessToken");
+    // const token = localStorage.getItem("accessToken");
     const url = `${BASE_URL}/expense/`;
   
     axios
-      .post(url, newExpense, { headers: { Authorization: `Bearer ${token}` } })
+      .post(url, newExpense, { headers: { Authorization: `Bearer ${accessToken}` } })
       .then((response) => {
         setExpenses((prev) => [...prev, response.data]);
         setShowModal(false);

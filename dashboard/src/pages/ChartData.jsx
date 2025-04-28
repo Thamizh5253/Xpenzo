@@ -1,22 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import ExpenseTrackerCharts from './Charts';
 import BASE_URL from '../config';
+import { useAuth } from '../context/AuthContext'; // Adjust the path as needed
 
 const BaseExpenseTracker = () => {
     const [data, setData] = useState(null);
     // const token = localStorage.getItem('token');
-    const token = localStorage.getItem("accessToken");
+    // const token = localStorage.getItem("accessToken");
+    const { accessToken } = useAuth(); // Use the access token from context
 
     // console.log(token);
     useEffect(() => {
         const fetchData = async () => {
             try {
                 const summaryResponse = await fetch(`${BASE_URL}/analytics/summary/`, {
-                    headers: { Authorization: `Bearer ${token}` }
+                    headers: { Authorization: `Bearer ${accessToken}` }
                 });
                 
                 const categoryResponse = await fetch(`${BASE_URL}/analytics/category-wise/`, {
-                    headers: { Authorization: `Bearer ${token}` }
+                    headers: { Authorization: `Bearer ${accessToken}` }
                 });
 
                 if (!summaryResponse.ok || !categoryResponse.ok) {

@@ -5,12 +5,13 @@ import Headers from "../../components/layouts/Header"; // Adjust path as needed
 import { showSuccessToast, showErrorToast } from "../../utils/toaster"; // Adjust path as needed
 import BASE_URL from "../../config";
 import axios from 'axios';
-
+import { useAuth } from '../../context/AuthContext'; // Adjust the path
 
 const Login = ({ setAuth }) => {
   const [formData, setFormData] = useState({ username: "", password: "" });
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
+  const { updateTokens } = useAuth();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -22,10 +23,10 @@ const Login = ({ setAuth }) => {
     try {
       const response = await axios.post(`${BASE_URL}/api/auth/login/`, formData);
       const data = response.data;
-
-      localStorage.setItem("accessToken", data.tokens.access);
-      localStorage.setItem("refreshToken", data.tokens.refresh);
-
+    
+      // Use the updateTokens function from your AuthContext to set cookies
+      updateTokens(data.tokens.access, data.tokens.refresh);
+    
       if (!data.profile_exists) {
         showSuccessToast("Profile incomplete! Redirecting to setup...");
         setTimeout(() => navigate("/profile-setup"), 2000);
@@ -33,9 +34,10 @@ const Login = ({ setAuth }) => {
         showSuccessToast("Login successful! Redirecting...");
         setTimeout(() => navigate("/dashboard"), 2000);
       }
-
+    
       setAuth(true);
-    } catch (error) {
+    }
+    catch (error) {
       console.error("Login error:", error);
       const errorMsg = error.response?.data?.error || "Invalid credentials";
       showErrorToast(errorMsg);

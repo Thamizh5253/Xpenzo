@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'charts',
     'askai',
     'expense_scheduler',
+    'split',
 ]
 
 MIDDLEWARE = [
@@ -168,7 +169,7 @@ EMAIL_HOST = "smtp.gmail.com"  # or your email provider's SMTP server
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = "lazytomkitten@gmail.com"
-EMAIL_HOST_PASSWORD = "pusf lmvs mkwy wwka"  # use an app password if using Gmail
+EMAIL_HOST_PASSWORD = "dayh wluh newi nyul"  # use an app password if using Gmail
 DEFAULT_FROM_EMAIL = "lazytomkitten@gmail.com"
 
 

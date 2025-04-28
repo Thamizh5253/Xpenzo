@@ -3,6 +3,7 @@ import axios from "axios";
 import AddScheduleModal from "./AddSchedule";
 import BASE_URL from "../../config";
 import { FaTrash, FaEdit } from "react-icons/fa";
+import { useAuth } from "../../context/AuthContext"; // Adjust the path as needed
 
 const ScheduleTable = () => {
   const [schedules, setSchedules] = useState([]);
@@ -10,14 +11,14 @@ const ScheduleTable = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [hoveredRow, setHoveredRow] = useState(null);
   const [selectedSchedule, setSelectedSchedule] = useState(null);
-
-  const token = localStorage.getItem("accessToken");
+  const { accessToken } = useAuth(); // Use the access token from context
+  // const token = localStorage.getItem("accessToken");
 
   const refreshData = () => {
-    if (!token) return;
+    if (!accessToken) return;
     axios
       .get(`${BASE_URL}/scheduler/schedule/`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${accessToken}` },
       })
       .then((res) => {
         setSchedules(res.data);
@@ -28,10 +29,10 @@ const ScheduleTable = () => {
   };
 
   useEffect(() => {
-    if (!token) return;
+    if (!accessToken) return;
     axios
       .get(`${BASE_URL}/scheduler/schedule/`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${accessToken}` },
       })
       .then((res) => {
         setSchedules(res.data);
@@ -48,7 +49,7 @@ const ScheduleTable = () => {
     if (!window.confirm("Are you sure you want to delete this schedule?")) return;
     try {
       await axios.delete(`${BASE_URL}/scheduler/schedule/delete/${id}/`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
       refreshData();
     } catch (err) {

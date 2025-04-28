@@ -9,5 +9,6 @@ urlpatterns = [
     path('analytics/', include('charts.urls')),
     path('askai/', include('askai.urls')),
     path('scheduler/', include('expense_scheduler.urls')),
+    path('split/', include('split.urls')),  # All expense split APIs
 
 ]
