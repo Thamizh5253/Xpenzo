@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from 'axios';
 import BASE_URL from "../config";
-import { useAuth } from "../context/AuthContext"; // Adjust the path as needed
+import { useAuth } from "../context/AuthContext";
+import {  showSuccessToast, showErrorToast } from '../utils/toaster';
 
 const ProfileForm = () => {
     const [formData, setFormData] = useState({
@@ -12,42 +13,43 @@ const ProfileForm = () => {
         phone_number: "",
         country: "",
         bio: "",
+        upi_id  : "",
     });
-    const [originalData, setOriginalData] = useState(null); // Store original profile data
-    const [message, setMessage] = useState("");
-    const [isEditing, setIsEditing] = useState(false); // Track if the form is in edit mode
+    const [originalData, setOriginalData] = useState(null);
+    const [isEditing, setIsEditing] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
-    const { accessToken } = useAuth(); // Use the access token from context
-    // Fetch profile data on component mount
+    const { accessToken } = useAuth();
+
     useEffect(() => {
         const fetchProfile = async () => {
-
+            setIsLoading(true);
             try {
-              const response = await axios.get(`${BASE_URL}/api/auth/profile/`, {
-                headers: {
-                  Authorization: `Bearer ${accessToken}`,
-                },
-              });
-            
-              const data = response.data;
-              setFormData(data);         // Pre-fill the form with existing data
-              setOriginalData(data);     // Store original data for cancel functionality
-              setIsEditing(true);        // Enable edit mode
-            
+                const response = await axios.get(`${BASE_URL}/api/auth/profile/`, {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                });
+                
+                const data = response.data;
+                setFormData(data);
+                setOriginalData(data);
+                setIsEditing(true);
+                showSuccessToast("Profile loaded successfully");
             } catch (error) {
-              if (error.response && error.response.status === 404) {
-                setMessage("You have not set up your profile yet.");
-                setIsEditing(false);    // Disable edit mode
-              } else {
-                console.error("Error fetching profile:", error);
-                setMessage("⚠️ An error occurred while fetching profile data.");
-              }
+                if (error.response && error.response.status === 404) {
+                    setIsEditing(false);
+                } else {
+                    console.error("Error fetching profile:", error);
+                    showErrorToast("Failed to load profile data");
+                }
+            } finally {
+                setIsLoading(false);
             }
-            
         };
 
         fetchProfile();
-    }, [navigate]);
+    }, [navigate, accessToken]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -56,118 +58,160 @@ const ProfileForm = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
+        setIsLoading(true);
+        
         try {
-        const url = `${BASE_URL}/api/auth/profile/create_or_update/`;
-        const method = isEditing ? "PUT" : "POST"; // Use PUT for updates, POST for creation
+            const url = `${BASE_URL}/api/auth/profile/create_or_update/`;
+            const method = isEditing ? "PUT" : "POST";
 
-        const response = await axios({
-            method,
-            url,
-            headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-            },
-            data: formData,
-        });
+            const response = await axios({
+                method,
+                url,
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+                },
+                data: formData,
+            });
 
-        const data = response.data;
-
-        if (response.status === 200) {
-            setMessage("✅ Profile saved successfully!");
-            setOriginalData(formData); // Update original data after saving
-            if (!isEditing) {
-            setTimeout(() => navigate("/dashboard"), 2000); // Redirect after setup
+            if (response.status === 200) {
+                showSuccessToast("Profile saved successfully!", toastId);
+                setOriginalData(formData);
+                if (!isEditing) {
+                    setTimeout(() => navigate("/dashboard"), 2000);
+                }
+            } else {
+                showErrorToast("Failed to save profile", toastId);
             }
-        } else {
-            setMessage("❌ Failed to save profile");
-        }
         } catch (error) {
-        console.error("Error saving profile:", error);
-        setMessage("⚠️ An error occurred");
+            console.error("Error saving profile:", error);
+            showErrorToast("An error occurred while saving");
+        } finally {
+            setIsLoading(false);
         }
-
     };
 
     const handleCancel = () => {
         if (originalData) {
-            setFormData(originalData); // Revert to original data
-            setMessage(""); // Clear any messages
+            setFormData(originalData);
+            showSuccessToast("Changes discarded");
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100">
-            <form onSubmit={handleSubmit} className="bg-white p-8 rounded-lg shadow-md w-96">
-                <h2 className="text-2xl font-semibold mb-6 text-center">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+            <form onSubmit={handleSubmit} className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+                <h2 className="text-3xl font-bold mb-6 text-center text-indigo-700">
                     {isEditing ? "Edit Your Profile" : "Set Up Your Profile"}
                 </h2>
-                {message && <p className="text-center mb-4 text-red-500">{message}</p>}
-                <input
-                    type="number"
-                    name="monthly_budget"
-                    placeholder="Monthly Budget"
-                    value={formData.monthly_budget}
-                    onChange={handleChange}
-                    required
-                    className="w-full mb-3 p-2 border rounded"
-                />
-                <input
-                    type="number"
-                    name="savings_goal"
-                    placeholder="Savings Goal"
-                    value={formData.savings_goal}
-                    onChange={handleChange}
-                    required
-                    className="w-full mb-3 p-2 border rounded"
-                />
-                <input
-                    type="number"
-                    name="income"
-                    placeholder="Income"
-                    value={formData.income}
-                    onChange={handleChange}
-                    required
-                    className="w-full mb-3 p-2 border rounded"
-                />
-                <input
-                    type="text"
-                    name="phone_number"
-                    placeholder="Phone Number"
-                    value={formData.phone_number}
-                    onChange={handleChange}
-                    className="w-full mb-3 p-2 border rounded"
-                />
-                <input
-                    type="text"
-                    name="country"
-                    placeholder="Country"
-                    value={formData.country}
-                    onChange={handleChange}
-                    className="w-full mb-3 p-2 border rounded"
-                />
-                <textarea
-                    name="bio"
-                    placeholder="Tell us about yourself"
-                    value={formData.bio}
-                    onChange={handleChange}
-                    className="w-full mb-3 p-2 border rounded"
-                />
-                <div className="flex justify-between">
+                
+                <div className="space-y-4">
+                    <div className="form-group">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Monthly Budget (₹)</label>
+                        <input
+                            type="number"
+                            name="monthly_budget"
+                            value={formData.monthly_budget}
+                            onChange={handleChange}
+                            required
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                            placeholder="Enter your monthly budget"
+                        />
+                    </div>
+                    
+                    <div className="form-group">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Savings Goal (₹)</label>
+                        <input
+                            type="number"
+                            name="savings_goal"
+                            value={formData.savings_goal}
+                            onChange={handleChange}
+                            required
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                            placeholder="Enter your savings goal"
+                        />
+                    </div>
+                    
+                    <div className="form-group">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Income (₹)</label>
+                        <input
+                            type="number"
+                            name="income"
+                            value={formData.income}
+                            onChange={handleChange}
+                            required
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                            placeholder="Enter your monthly income"
+                        />
+                    </div>
+
+                    <div className="form-group">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">UPI ID</label>
+                        <input
+                            type="text"
+                            name="upi_id"
+                            value={formData.upi_id}
+                            onChange={handleChange}
+                            required
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                            placeholder="Enter your monthly income"
+                        />
+                    </div>
+                    
+                    <div className="form-group">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                        <input
+                            type="text"
+                            name="phone_number"
+                            value={formData.phone_number}
+                            onChange={handleChange}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                            placeholder="Enter your phone number"
+                        />
+                    </div>
+                    
+                    <div className="form-group">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                        <input
+                            type="text"
+                            name="country"
+                            value={formData.country}
+                            onChange={handleChange}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                            placeholder="Enter your country"
+                        />
+                    </div>
+                    
+                    <div className="form-group">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">About You</label>
+                        <textarea
+                            name="bio"
+                            value={formData.bio}
+                            onChange={handleChange}
+                            rows="3"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                            placeholder="Tell us about yourself"
+                        />
+                    </div>
+                </div>
+                
+                <div className="flex justify-between mt-6">
                     {isEditing && (
                         <button
                             type="button"
                             onClick={handleCancel}
-                            className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600 transition duration-200"
+                            disabled={isLoading}
+                            className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 transition disabled:opacity-50"
                         >
                             Cancel
                         </button>
                     )}
                     <button
                         type="submit"
-                        className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition duration-200"
+                        disabled={isLoading}
+                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition disabled:opacity-50"
                     >
-                        Save
+                        {isLoading ? "Saving..." : "Save Profile"}
                     </button>
                 </div>
             </form>
@@ -176,6 +220,3 @@ const ProfileForm = () => {
 };
 
 export default ProfileForm;
-
-
-

@@ -363,106 +363,143 @@ const handlePercentageChange = (userId, value) => {
                 </select>
               </div>
 
-              {/* Split Type */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Split Type
-                </label>
-                <select
-                  name="split_type"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all"
-                  value={formData.split_type}
-                  onChange={handleChange}
-                  required
-                >
-                  {splitTypes.map(type => (
-                    <option key={type.value} value={type.value}>
-                      {type.label}
-                    </option>
-                  ))}
-                </select>
-                {formData.split_type === 'PERCENTAGE' && (
-  <div className="mt-4 space-y-4">
-    {/* Display members with input fields */}
-    {members.map((user) => {
-      const split = formData.splits.find(s => s.user_id === user.id) || {};
-
-      return (
-        <div key={user.id} className="flex items-center space-x-4">
-          <span className="w-24">{user.username}</span> {/* Display the username */}
-
-          {/* Input box for percentage */}
-          <input
-            type="number"
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-            placeholder="Enter percentage"
-            value={split.percentage || ''}
-            onChange={(e) => handlePercentageChange(user.id, e.target.value)}
-            min="0"
-            max="100"
-          />
-          <span>%</span>
-        </div>
-      );
-    })}
+           {/* Split Type Section */}
+<div className="space-y-4">
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-2">
+      Split Type
+    </label>
+    <div className="relative">
+      <select
+        name="split_type"
+        className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl shadow-sm appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all pl-4 pr-10"
+        value={formData.split_type}
+        onChange={handleChange}
+        required
+      >
+        {splitTypes.map(type => (
+          <option key={type.value} value={type.value}>
+            {type.label}
+          </option>
+        ))}
+      </select>
+      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+        </svg>
+      </div>
+    </div>
   </div>
-)}
 
-{formData.split_type === 'SHARES' && (
-  <div className="mt-4 space-y-4">
-    {members.map((user) => {
-      const split = formData.splits.find(s => s.user_id === user.id) || {};
-
-      return (
-        <div key={user.id} className="flex items-center space-x-4">
-          <span className="w-24">{user.username}</span>
-
-          {/* Input box for shares */}
-          <input
-            type="number"
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-            placeholder="Enter number of shares"
-            value={split.shares || ''}
-            onChange={(e) => handleSharesChange(user.id, e.target.value)}
-            min="0"
-          />
-          <span>shares</span>
-        </div>
-      );
-    })}
-  </div>
-)}
-
-
-{formData.split_type === 'EXACT' && (
-  <div className="mt-4 space-y-4">
-    {members.map((user) => {
-      const split = formData.splits.find(s => s.user_id === user.id) || {};
-
-      return (
-        <div key={user.id} className="flex items-center space-x-4">
-          <span className="w-24">{user.username}</span>
-
-          {/* Input box for exact amount */}
-          <input
-            type="number"
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-            placeholder="Enter amount"
-            value={split.amount_owed || ''}
-            onChange={(e) => handleExactAmountChange(user.id, Number(e.target.value))}
-            min="0"
-          />
-          <span>₹</span>
-        </div>
-      );
-    })}
-  </div>
-)}
-
-
-
-
+  {/* Percentage Split */}
+  {formData.split_type === 'PERCENTAGE' && (
+    <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100">
+      <h4 className="text-sm font-medium text-blue-800 mb-3">Percentage Distribution</h4>
+      <div className="space-y-3">
+        {members.map((user) => {
+          const split = formData.splits.find(s => s.user_id === user.id) || {};
+          return (
+            <div key={user.id} className="flex items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-800 font-medium text-sm">
+                    {user.username.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="truncate font-medium text-gray-700">{user.username}</span>
+                </div>
               </div>
+              <div className="flex items-center gap-2 w-32">
+                <input
+                  type="number"
+                  className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all"
+                  placeholder="0"
+                  value={split.percentage || ''}
+                  onChange={(e) => handlePercentageChange(user.id, e.target.value)}
+                  min="0"
+                  max="100"
+                />
+                <span className="text-gray-500 text-sm">%</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  )}
+
+  {/* Shares Split */}
+  {formData.split_type === 'SHARES' && (
+    <div className="bg-purple-50/50 p-4 rounded-xl border border-purple-100">
+      <h4 className="text-sm font-medium text-purple-800 mb-3">Shares Distribution</h4>
+      <div className="space-y-3">
+        {members.map((user) => {
+          const split = formData.splits.find(s => s.user_id === user.id) || {};
+          return (
+            <div key={user.id} className="flex items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-800 font-medium text-sm">
+                    {user.username.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="truncate font-medium text-gray-700">{user.username}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 w-32">
+                <input
+                  type="number"
+                  className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all"
+                  placeholder="0"
+                  value={split.shares || ''}
+                  onChange={(e) => handleSharesChange(user.id, e.target.value)}
+                  min="0"
+                />
+                <span className="text-gray-500 text-sm">shares</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  )}
+
+  {/* Exact Amount Split */}
+  {formData.split_type === 'EXACT' && (
+    <div className="bg-green-50/50 p-4 rounded-xl border border-green-100">
+      <h4 className="text-sm font-medium text-green-800 mb-3">Exact Amounts</h4>
+      <div className="space-y-3">
+        {members.map((user) => {
+          const split = formData.splits.find(s => s.user_id === user.id) || {};
+          return (
+            <div key={user.id} className="flex items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-800 font-medium text-sm">
+                    {user.username.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="truncate font-medium text-gray-700">{user.username}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 w-32">
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">₹</span>
+                  <input
+                    type="number"
+                    className="w-full pl-8 pr-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent transition-all"
+                    placeholder="0.00"
+                    value={split.amount_owed || ''}
+                    onChange={(e) => handleExactAmountChange(user.id, Number(e.target.value))}
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  )}
+</div>
             </div>
 
             {/* Form Actions */}

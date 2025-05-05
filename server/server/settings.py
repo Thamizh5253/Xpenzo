@@ -152,11 +152,20 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=260),
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),  # 1 hour
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
+    # 'AUTH_HEADER_TYPES': ('Bearer',),
+     'UPDATE_LAST_LOGIN': True,                          # Updates user's last_login field
+    
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'VERIFYING_KEY': None,
+    
     'AUTH_HEADER_TYPES': ('Bearer',),
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
 }
 
 MEDIA_URL = '/media/'
@@ -171,7 +180,7 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = "lazytomkitten@gmail.com"
 EMAIL_HOST_PASSWORD = "dayh wluh newi nyul"  # use an app password if using Gmail
 DEFAULT_FROM_EMAIL = "lazytomkitten@gmail.com"
-
+COMPANY_NAME= "Xpenzo"  # Replace with your company name
 
 CACHES = {
     "default": {

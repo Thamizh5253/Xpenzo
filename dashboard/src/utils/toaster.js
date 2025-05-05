@@ -35,6 +35,7 @@ export const showLoadingToast = (message) => {
   });
 };
 
+
 // Custom Toast (White with customizable accent)
 export const showCustomToast = (message, options = {}) => {
   toast(message, {
@@ -60,4 +61,38 @@ export const showMinimalToast = (message) => {
       boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
     }
   });
+};
+
+
+// Show a loading toast and return its ID for later update
+export const showToastWithLoading = async (promise, { loadingMsg = 'Processing...', successMsg = 'Success!', errorMsg = 'Something went wrong' }) => {
+  const toastId = toast.loading(loadingMsg, {
+    iconTheme: {
+      primary: '#3B82F6', // Blue
+      secondary: '#fff'
+    }
+  });
+
+  try {
+    const result = await promise;
+    toast.success(successMsg, {
+      id: toastId,
+      duration: 2000,
+      iconTheme: {
+        primary: '#10B981', // Green
+        secondary: '#fff'
+      }
+    });
+    return result;
+  } catch (error) {
+    toast.error(errorMsg, {
+      id: toastId,
+      duration: 2000,
+      iconTheme: {
+        primary: '#EF4444', // Red
+        secondary: '#fff'
+      }
+    });
+    throw error; // rethrow if needed
+  }
 };

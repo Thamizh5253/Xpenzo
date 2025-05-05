@@ -15,6 +15,15 @@ from decimal import Decimal
 
 import json
 
+from  .tasks  import send_payment_request_email
+from users.models import UserProfile
+
+
+import qrcode
+from io import BytesIO
+from django.core.mail import EmailMessage
+from django.core.files.base import ContentFile
+from django.conf import settings
 
 
 
@@ -217,6 +226,22 @@ def create_group_expense(request):
                     user=user,
                     amount_owed=amount_owed,
                     shares=shares
+                )
+        
+
+        # payer_upi_id = request.user.profile.upi_id  # Adjust this based on your user model
+
+        upi_id = request.user.userprofile.upi_id if hasattr(request.user, 'userprofile') else None
+
+        # Notify members who owe money (except the payer)
+        for split in ExpenseSplit.objects.filter(expense=expense):
+            if split.user != request.user and split.amount_owed > 0:
+                send_payment_request_email.delay(
+                    recipient_email=split.user.email,
+                    recipient_name=split.user.username,
+                    payer_name=request.user.username,
+                    amount=str(split.amount_owed),
+                    payer_upi_id = upi_id
                 )
 
         return Response(GroupExpenseSerializer(expense).data, status=status.HTTP_201_CREATED)

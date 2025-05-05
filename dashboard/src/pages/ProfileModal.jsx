@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { FiLogOut } from "react-icons/fi";
 import { useAuth } from "../context/AuthContext"; // Adjust the path as needed
 
-export default function UserDropdown({ setAuth }) {
+export default function UserDropdown( ) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
@@ -13,7 +13,7 @@ export default function UserDropdown({ setAuth }) {
   const handleLogout = () => {
    
     clearTokens();
-    setAuth(false);
+    // setAuth(false);
     navigate("/login");
   };
 
@@ -39,16 +39,17 @@ export default function UserDropdown({ setAuth }) {
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 shadow-lg rounded-md animate-fade-in">
-          <button
-            className="w-full flex items-center gap-2 px-4 py-2 text-left text-red-500 hover:bg-gray-100 rounded-md transition duration-200"
-            onClick={handleLogout}
-          >
-            <FiLogOut className="text-lg" />
-            <span>Logout</span>
-          </button>
-        </div>
-      )}
+  <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 shadow-lg rounded-md animate-fade-in z-50">
+    <button
+      className="w-full flex items-center gap-2 px-4 py-2 text-left text-red-500 hover:bg-gray-100 rounded-md transition duration-200"
+      onClick={handleLogout}
+    >
+      <FiLogOut className="text-lg" />
+      <span>Logout</span>
+    </button>
+  </div>
+)}
+
     </div>
   );
 }

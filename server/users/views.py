@@ -13,6 +13,11 @@ from .tasks import send_password_reset_email
 from django.core.cache import cache
 import uuid
 
+from django.http import JsonResponse
+from rest_framework_simplejwt.exceptions import TokenError
+import json
+from django.views.decorators.csrf import csrf_exempt
+
 # views.py
 from .serializers import UserMiniSerializer
 
@@ -169,3 +174,52 @@ def list_possible_group_members(request):
     users = User.objects.exclude(id=request.user.id)
     serializer = UserMiniSerializer(users, many=True)
     return Response(serializer.data)
+
+
+
+@csrf_exempt
+def refresh_token_view(request):
+    if request.method != 'POST':
+        return JsonResponse(
+            {'error': 'Only POST method is allowed'},
+            status=405
+        )
+    
+    try:
+        # Parse JSON data from request body
+        data = json.loads(request.body)
+        refresh_token = data.get('refresh')
+        
+        if not refresh_token:
+            return JsonResponse(
+                {'error': 'Refresh token is required'},
+                status=400
+            )
+        
+        # Validate and refresh token
+        refresh = RefreshToken(refresh_token)
+        new_access_token = str(refresh.access_token)
+        
+        # Optional: Rotate refresh token (security best practice)
+        new_refresh_token = str(refresh)
+        
+        return JsonResponse({
+            'access': new_access_token,
+            'refresh': new_refresh_token  # Include if rotating refresh tokens
+        }, status=200)
+        
+    except json.JSONDecodeError:
+        return JsonResponse(
+            {'error': 'Invalid JSON data'},
+            status=400
+        )
+    except TokenError:
+        return JsonResponse(
+            {'error': 'Invalid or expired refresh token'},
+            status=401
+        )
+    except Exception as e:
+        return JsonResponse(
+            {'error': str(e)},
+            status=500
+        )

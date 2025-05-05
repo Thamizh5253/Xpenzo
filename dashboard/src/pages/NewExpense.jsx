@@ -2,12 +2,14 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import BASE_URL from "../config";
-import { useAuth } from "../context/AuthContext"; // Adjust the path as needed
+import { useAuth } from "../context/AuthContext";
+import { FaCamera } from "react-icons/fa"; // Import camera icon from react-icons
 
 export default function CreateExpense() {
   const [error, setError] = useState(null);
+  const { accessToken } = useAuth();
+  const navigate = useNavigate();
 
-  const { accessToken } = useAuth(); // Use the access token from context
   const [newExpense, setNewExpense] = useState({
     amount: "",
     category: "",
@@ -32,15 +34,12 @@ export default function CreateExpense() {
     { value: "other", label: "Other" },
   ];
 
-  const navigate = useNavigate();
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewExpense((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleCreateExpense = () => {
-    // const token = localStorage.getItem("accessToken");
     if (!accessToken) {
       navigate("/login");
       return;
@@ -58,7 +57,7 @@ export default function CreateExpense() {
           description: "",
           payment_method: "",
         });
-        navigate("/"); // Redirect to expenses list after creation
+        navigate("/");
       })
       .catch((err) => {
         console.error("Error saving expense:", err);
@@ -66,10 +65,22 @@ export default function CreateExpense() {
       });
   };
 
+  const handleScanClick = () => {
+    navigate("/ocr");
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-blue-50 to-purple-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md">
+    <div className="min-h-screen bg-gradient-to-r from-blue-50 to-purple-50 flex items-center justify-center p-4 relative">
+      {/* Floating Scan Button */}
+      <button
+        onClick={handleScanClick}
+        className="fixed bottom-8 right-8 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-lg flex items-center justify-center transition-all z-10"
+        title="Scan Receipt"
+      >
+        <FaCamera className="text-xl" />
+      </button>
+
+      <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md relative">
         <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">Create New Expense</h2>
 
         {/* Amount Field */}

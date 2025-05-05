@@ -6,7 +6,7 @@ import App from './App';
 import { AuthProvider } from './context/AuthContext'; // Adjust the import path as needed
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
+  // <React.StrictMode>
     <AuthProvider>
       <App />
       <Toaster
@@ -24,5 +24,5 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         }}
       />
     </AuthProvider>
-  </React.StrictMode>
+  //  </React.StrictMode>
 );

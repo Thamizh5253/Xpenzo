@@ -1,47 +1,55 @@
 import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Sidebar from "./components/layouts/Sidebar";
 import Header from "./components/layouts/Header";
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
 import AppRoutes from "./routes/AppRoutes";
-import ForgotPassword from "./pages/Auth/ForgotPassword";                                                                                                  
+import ForgotPassword from "./pages/Auth/ForgotPassword";
 import ResetPassword from "./pages/Auth/ResetPassword";
 import { useAuth } from "./context/AuthContext";
+import LoadingSpinner from "./components/common/LoadingSpinner";
 
 function App() {
   const [isOpen, setIsOpen] = useState(true);
-  const { accessToken } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   
-  // Remove the separate isAuthenticated state - we'll use accessToken directly
   const toggleSidebar = () => setIsOpen(!isOpen);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <LoadingSpinner size="large" />
+      </div>
+    );
+  }
 
   return (
     <Router>
       <Routes>
-        {/* Auth routes */}
+        {/* Public routes */}
         <Route 
           path="/login" 
-          element={accessToken ? <Navigate to="/dashboard" replace /> : <Login />} 
+          element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} 
         />
         <Route 
           path="/register" 
-          element={accessToken ? <Navigate to="/dashboard" replace /> : <Register />} 
+          element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Register />} 
         />
         <Route 
           path="/forgot-password" 
-          element={accessToken ? <Navigate to="/dashboard" replace /> : <ForgotPassword />}  
+          element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <ForgotPassword />}  
         />
         <Route 
           path="/reset-password/" 
-          element={accessToken ? <Navigate to="/dashboard" replace /> : <ResetPassword />}  
+          element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <ResetPassword />}  
         />
         
-        {/* Protected dashboard routes */}
+        {/* Protected routes */}
         <Route
           path="/*"
           element={
-            accessToken ? (
+            isAuthenticated ? (
               <div className="flex h-screen bg-gray-100">
                 <Sidebar isOpen={isOpen} toggleSidebar={toggleSidebar} />
                 <div className="flex flex-col flex-1 overflow-hidden">

@@ -14,7 +14,7 @@ class UserProfile(models.Model):
 
     # User preferences
     avatar = models.ImageField(upload_to="avatars/", null=True, blank=True)
-    
+    upi_id = models.CharField(max_length=50, blank=True, null=True)
 
     # Extra user info
     phone_number = models.CharField(max_length=15, blank=True, null=True)

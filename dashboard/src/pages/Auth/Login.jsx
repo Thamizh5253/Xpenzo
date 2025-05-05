@@ -1,17 +1,17 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
-import Headers from "../../components/layouts/Header"; // Adjust path as needed
+import Headers from "../../components/layouts/AuthHeader"; // Adjust path as needed
 import { showSuccessToast, showErrorToast } from "../../utils/toaster"; // Adjust path as needed
 import BASE_URL from "../../config";
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext'; // Adjust the path
 
-const Login = ({ setAuth }) => {
+const Login = () => {
   const [formData, setFormData] = useState({ username: "", password: "" });
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
-  const { updateTokens } = useAuth();
+  const { setTokens } = useAuth();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -25,7 +25,7 @@ const Login = ({ setAuth }) => {
       const data = response.data;
     
       // Use the updateTokens function from your AuthContext to set cookies
-      updateTokens(data.tokens.access, data.tokens.refresh);
+      setTokens(data.tokens.access, data.tokens.refresh);
     
       if (!data.profile_exists) {
         showSuccessToast("Profile incomplete! Redirecting to setup...");
@@ -35,7 +35,7 @@ const Login = ({ setAuth }) => {
         setTimeout(() => navigate("/dashboard"), 2000);
       }
     
-      setAuth(true);
+      // setAuth(true);
     }
     catch (error) {
       console.error("Login error:", error);
