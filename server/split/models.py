@@ -55,20 +55,28 @@ class GroupExpense(models.Model):
     def __str__(self):
         return f"{self.description} - ₹{self.amount} by {self.paid_by.username}"
 
+
+
 class ExpenseSplit(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"  # Payment not initiated
+        REQUESTED = "requested", "Settlement Requested"  # Payer clicked "Settle"
+        CONFIRMED = "confirmed", "Confirmed by Payee"  # Payee accepted
+        REJECTED = "rejected", "Rejected by Payee"  # Payee rejected the claim
+
     expense = models.ForeignKey(GroupExpense, on_delete=models.CASCADE, related_name="splits")
     user = models.ForeignKey(User, on_delete=models.CASCADE)  # who owes
     amount_owed = models.DecimalField(max_digits=10, decimal_places=2)
-    percentage = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # For percentage splits
-    shares = models.PositiveSmallIntegerField(null=True, blank=True)  # For share-based splits
-    is_settled = models.BooleanField(default=False)
+    percentage = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    shares = models.PositiveSmallIntegerField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     settled_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         unique_together = ('expense', 'user')
 
     def __str__(self):
-        return f"{self.user.username} owes ₹{self.amount_owed} for {self.expense.description}"
+        return f"{self.user.username} owes ₹{self.amount_owed} for {self.expense.description} [{self.get_status_display()}]"
 
 class Settlement(models.Model):
     group = models.ForeignKey(ExpenseGroup, on_delete=models.CASCADE)

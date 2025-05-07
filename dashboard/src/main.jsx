@@ -4,9 +4,12 @@ import { Toaster } from 'react-hot-toast';
 import './index.css';
 import App from './App';
 import { AuthProvider } from './context/AuthContext'; // Adjust the import path as needed
+// main.jsx or App.jsx
 
+ 
 ReactDOM.createRoot(document.getElementById('root')).render(
   // <React.StrictMode>
+ 
     <AuthProvider>
       <App />
       <Toaster
@@ -24,5 +27,10 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         }}
       />
     </AuthProvider>
+
   //  </React.StrictMode>
 );
+
+
+
+

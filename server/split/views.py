@@ -19,11 +19,8 @@ from  .tasks  import send_payment_request_email
 from users.models import UserProfile
 
 
-import qrcode
-from io import BytesIO
-from django.core.mail import EmailMessage
-from django.core.files.base import ContentFile
-from django.conf import settings
+from django.db import transaction
+from datetime import datetime
 
 
 
@@ -130,6 +127,7 @@ def get_group_expenses(request, group_id):
         return Response({"detail": "You are not a member of this group."}, status=status.HTTP_400_BAD_REQUEST)
     
     expenses = GroupExpense.objects.filter(group=group)
+    print(expenses)
     expenses_data = GroupExpenseSerializer(expenses, many=True).data
     return Response(expenses_data, status=status.HTTP_200_OK)
 
@@ -172,6 +170,7 @@ def create_group_expense(request):
             # Divide the amount equally
             amount_per_member = total_amount / len(members)
             for member in members:
+                print(member.user)
                 ExpenseSplit.objects.create(expense=expense, user=member.user, amount_owed=amount_per_member)
 
         elif split_type == 'EXACT':
@@ -264,15 +263,21 @@ def user_split_expenses(request):
 
     # Expenses the user owes to others
     for split in owed_splits:
-        expense = split.expense
+        expense = split.expense # Exclude self-pay
+        if expense.paid_by == user:
+            continue
+        
         data["expenses_user_owes"].append({
             "expense_id": str(expense.id),
             "description": expense.description,
             "amount_owed": split.amount_owed,
             "paid_to": expense.paid_by.username,
             "group": expense.group.group_name,
-            "date": expense.date
+            "date": expense.date,
+            "status": split.status,
+            "settled_at": split.settled_at,
         })
+       
 
     # Expenses the user paid for others
     for expense in paid_expenses:
@@ -284,7 +289,125 @@ def user_split_expenses(request):
                 "user_owes": split.user.username,
                 "amount_owed": split.amount_owed,
                 "group": expense.group.group_name,
-                "date": expense.date
+                "date": expense.date,
+                "status": split.status,
+                "settled_at": split.settled_at,
+                # "payer": expense.paid_by.username,
             })
+            
+
 
     return Response(data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def request_settlement(request):
+    expense_id = request.data.get('expense_id')
+    if not expense_id:
+        return Response({"detail": "Expense ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        with transaction.atomic():
+            # Get the expense and related splits
+            expense = get_object_or_404(GroupExpense, id=expense_id)
+            splits = ExpenseSplit.objects.filter(expense=expense)
+            
+            # Verify user is a payee in this expense
+            if not splits.filter(user=request.user).exists():
+                return Response(
+                    {"detail": "You are not involved in this expense."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            # Get the user's specific split
+            user_split = splits.get(user=request.user)
+            
+            # Only allow requesting if status is PENDING
+            if user_split.status != ExpenseSplit.Status.PENDING:
+                return Response(
+                    {"detail": "Settlement already requested or processed."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Update status to REQUESTED
+            user_split.status = ExpenseSplit.Status.REQUESTED
+            user_split.save()
+            
+            return Response(
+                {"detail": "Settlement request sent successfully."},
+                status=status.HTTP_200_OK
+            )
+            
+    except Exception as e:
+        return Response(
+            {"detail": f"Error requesting settlement: {str(e)}"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def confirm_settlement(request):
+    return handle_settlement_action(request, ExpenseSplit.Status.CONFIRMED, "confirmed")
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def reject_settlement(request):
+    return handle_settlement_action(request, ExpenseSplit.Status.REJECTED, "rejected")
+
+
+
+def handle_settlement_action(request, new_status, action_name):
+    expense_id = request.data.get('expense_id')
+    username = request.data.get('username')  # The user whose split is being confirmed/rejected
+    
+    if not expense_id or not username:
+        return Response(
+            {"detail": "Expense ID and username are required."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        with transaction.atomic():
+            # Get the expense and the specific user's split
+            expense = get_object_or_404(GroupExpense, id=expense_id)
+            user = get_object_or_404(User, username=username)
+            user_split = get_object_or_404(ExpenseSplit, expense=expense, user=user)
+            
+            # Verify the requesting user is the payer
+            if request.user != expense.paid_by:
+                return Response(
+                    {"detail": "Only the payer can confirm/reject settlements."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            # Verify the split is in REQUESTED state
+            if user_split.status != ExpenseSplit.Status.REQUESTED:
+                return Response(
+                    {"detail": "Settlement is not in requested state."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Update the status
+            if new_status == ExpenseSplit.Status.CONFIRMED:
+                user_split.status = new_status
+                user_split.settled_at = datetime.now()
+                message = "Settlement confirmed successfully."
+            else:  # REJECTED
+                user_split.status = ExpenseSplit.Status.PENDING  # Set back to PENDING
+                message = "Settlement rejected and reset to pending."
+            
+            user_split.save()
+            
+            return Response(
+                {"detail": message},
+                status=status.HTTP_200_OK
+            )
+            
+    except Exception as e:
+        return Response(
+            {"detail": f"Error processing settlement: {str(e)}"},
+            status=status.HTTP_400_BAD_REQUEST
+        )

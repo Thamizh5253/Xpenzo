@@ -23,6 +23,7 @@ DEBUG = True
 # Application definition
 
 INSTALLED_APPS = [
+       
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -40,6 +41,8 @@ INSTALLED_APPS = [
     'askai',
     'expense_scheduler',
     'split',
+
+
 ]
 
 MIDDLEWARE = [
@@ -195,3 +198,16 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 
 
+
+
+# # ASGI_APPLICATION = 'server.routing.application'
+# ASGI_APPLICATION = 'server.asgi.application'
+
+# CHANNEL_LAYERS = {
+#     "default": {
+#         "BACKEND": "channels_redis.core.RedisChannelLayer",
+#         "CONFIG": {
+#             "hosts": [("127.0.0.1", 6379)],
+#         },
+#     },
+# }

@@ -7,7 +7,7 @@ import { useAuth } from '../../context/AuthContext'; // Adjust the path as neede
 const CreateSplitExpenseModal = ({ 
   isOpen, 
   onClose,
-  refreshExpenses // Add this prop to refresh parent component after creation
+  // refreshExpenses // Add this prop to refresh parent component after creation
 }) => {
 
 
@@ -43,9 +43,9 @@ const CreateSplitExpenseModal = ({
         setGroups(response.data);
         console.log('Fetched groups:', response.data);
         // Set default group if available
-        if (response.data.length > 0) {
-          setFormData(prev => ({ ...prev, group_id: response.data[0].id }));
-        }
+        // if (response.data.length > 0) {
+        //   setFormData(prev => ({ ...prev, group_id: response.data[0].id }));
+        // }
       } catch (error) {
         console.error('Error fetching groups:', error);
         showErrorToast('Failed to load groups');
@@ -64,6 +64,9 @@ const CreateSplitExpenseModal = ({
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
+
+
+  
 
   const handleChangeGroup = (e) => {
     const { value } = e.target;
@@ -159,6 +162,22 @@ const handlePercentageChange = (userId, value) => {
     });
   }
   
+  // Clear form data
+  const clearFromDataAndCloseModal = () => {
+    setFormData({
+      group_id: '',
+      amount: '', 
+      description: '',
+      date: new Date().toISOString().split('T')[0],
+      category: '',
+      payment_method: '',
+      split_type: 'EQUAL',
+      splits:[]
+
+    });
+    setMembers([]); // Clear members when closing the modal
+    onClose();
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -178,8 +197,10 @@ const handlePercentageChange = (userId, value) => {
 
       if (response.status === 201) {
         showSuccessToast('Expense created successfully!');
-        if (refreshExpenses) refreshExpenses(); // Refresh parent component
-        onClose();
+        // if (refreshExpenses) refreshExpenses(); // Refresh parent component
+
+        clearFromDataAndCloseModal();
+        // onClose();
       }
     } catch (error) {
       const errorMessage = error.response?.data?.message || 
@@ -222,7 +243,7 @@ const handlePercentageChange = (userId, value) => {
               <p className="text-sm text-gray-500">Record a shared expense</p>
             </div>
             <button 
-              onClick={onClose}
+              onClick={clearFromDataAndCloseModal}
               className="text-gray-400 hover:text-gray-600 transition-colors mt-1"
               disabled={isLoading}
             >
@@ -239,32 +260,31 @@ const handlePercentageChange = (userId, value) => {
             <div className="space-y-4">
               {/* Group Selection */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Group
-                </label>
-                {isGroupsLoading ? (
-                  <div className="animate-pulse h-12 bg-gray-100 rounded-lg"></div>
-                ) : (
-                  <select
-                    name="group_id"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all"
-                    value={formData.group_id}
-                    onChange={handleChangeGroup}
-                    required
-                    disabled={groups.length === 0 || isGroupsLoading}
-                  >
-                    {groups.length === 0 ? (
-                      <option value="">No groups available</option>
-                    ) : (
-                      groups.map(group => (
-                        <option key={group.id} value={group.id}>
-                          {group.group_name}
-                        </option>
-                      ))
-                    )}
-                  </select>
-                )}
-              </div>
+  <label className="block text-sm font-medium text-gray-700 mb-2">Group</label>
+  {isGroupsLoading ? (
+    <div className="animate-pulse h-12 bg-gray-100 rounded-lg"></div>
+  ) : (
+    <select
+      name="group_id"
+      className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all"
+      value={formData.group_id}
+      onChange={handleChangeGroup}
+      required
+      // disabled={groups.length === 0}
+    >
+       <option value="" disabled>
+        {groups.length === 0 ? "No groups available" : "Select Group"}
+      </option>
+
+      {groups.map(group => (
+        <option key={group.id} value={group.id}>
+          {group.group_name}
+        </option>
+      ))}
+    </select>
+  )}
+</div>
+
 
               {/* Amount */}
               <div>
@@ -506,7 +526,7 @@ const handlePercentageChange = (userId, value) => {
             <div className="mt-6 pt-4 border-t border-gray-100 flex justify-end gap-3">
               <button
                 type="button"
-                onClick={onClose}
+                onClick={clearFromDataAndCloseModal}
                 className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium shadow-sm"
                 disabled={isLoading}
               >

@@ -10,7 +10,7 @@ const SplitExpenseDashboard = () => {
   const [activeTab, setActiveTab] = useState('expenses');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
-  const [editData, setEditData] = useState();
+  // const [datachanged, setDataChanged] = useState(true);
   const [expenses, setExpenses] = useState({
     userOwes: [],
     userPaid: []
@@ -24,7 +24,12 @@ const SplitExpenseDashboard = () => {
   const [error, setError] = useState(null);
   // const token = localStorage.getItem('accessToken');
   const { accessToken } = useAuth(); // Use the access token from context
-  useEffect(() => {
+  
+  // useEffect(() => {
+    
+  //   console.log("Expenses updated:", expenses);
+  // }, [expenses]);
+  
     const fetchData = async () => {
       try {
         // Fetch expenses
@@ -63,10 +68,7 @@ const SplitExpenseDashboard = () => {
       });
       setUserData(response.data);
       console.log('Fetched members:', response.data);
-      // Set default group if available
-      // if (response.data.length > 0) {
-      //   setFormData(prev => ({ ...prev, group_id: response.data[0].id }));
-      // }
+      
     } catch (error) {
       console.error('Error fetching members:', error);
       showErrorToast('Failed to load members');
@@ -75,21 +77,15 @@ const SplitExpenseDashboard = () => {
     }
   };
 
-    fetchUsers();
 
+  useEffect(() => {
+    fetchUsers();
     fetchData();
-  }, [accessToken ]);
+  }, [accessToken , isModalOpen, isExpenseModalOpen]);
 
   const handleEditGroup = (group) => {
 
-    // Open a modal or form pre-filled with group data
-    setEditData(group);
-
-    // setTimeout(() => {
-    //   // setEditData(group);
-    //   setIsModalOpen(true);
-
-    // }, 4000);
+    
     setIsModalOpen(true);
 
 
@@ -124,26 +120,76 @@ const SplitExpenseDashboard = () => {
     }
     
   };
-  
-  const settleExpense = async (expenseId) => {
+  const requestSettlement = async (expenseId, username) => {
     try {
       const response = await axios.post(
-        `${BASE_URL}/split/settle_expense/${expenseId}/`,
-        {},
-        { headers: { Authorization: `Bearer ${accessToken}` } }
+        `${BASE_URL}/split/request_settlement/`, 
+        { expense_id: expenseId },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`
+          }
+        }
       );
+      
+      console.log('Expense settled:', response.data);
+      showSuccessToast(response.data.detail);
+      fetchData(); // Refresh data after settlement request
+     
 
-      if (response.status === 200) {
-        setExpenses(prev => ({
-          ...prev,
-          userOwes: prev.userOwes.filter(exp => exp.expense_id !== expenseId),
-          userPaid: prev.userPaid.filter(exp => exp.expense_id !== expenseId)
-        }));
-      }
-    } catch (err) {
-      console.error("Failed to settle expense:", err);
+    } catch (error) {
+      console.error('Error settling expense:', error);
+      showErrorToast(error.response?.data?.detail || 'Failed to settle expense');
     }
   };
+
+const confirmSettlement = async (expenseId , username) => {
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/split/confirm_settlement/`, 
+      { expense_id: expenseId,
+        username: username
+       },
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
+      }
+    );
+    console.log('Expense settled:', response.data);
+    showSuccessToast(response.data.detail);
+    fetchData(); // Refresh data after settlement request
+    // Refresh expense data or update local state
+  } catch (error) {
+    console.error('Error settling expense:', error);
+    showErrorToast(error.response?.data?.detail || 'Failed to settle expense');
+  }
+};
+
+const rejectSettlement = async (expenseId , username) => {
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/split/reject_settlement/`, 
+      { expense_id: expenseId ,
+        username: username
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
+      }
+    );
+
+    console.log('Expense settled:', response.data);
+    showSuccessToast(response.data.detail);
+    fetchData(); // Refresh data after settlement request
+    // Refresh expense data or update local state
+  } catch (error) {
+    console.error('Error settling expense:', error);
+    showErrorToast(error.response?.data?.detail || 'Failed to settle expense');
+  }
+};
+
 
   if (loading.expenses || loading.groups) {
     return (
@@ -261,108 +307,246 @@ const SplitExpenseDashboard = () => {
             </div>
 
             {/* Expenses You Owe */}
-            <div className="mb-8">
-              <h3 className="text-md font-medium text-gray-700 mb-3">Expenses You Owe</h3>
-              <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-                {expenses.userOwes.length > 0 ? (
-                  <ul className="divide-y divide-gray-200">
-                    {expenses.userOwes.map((expense) => (
-                      <li key={`owe-${expense.expense_id}`} className="hover:bg-gray-50 transition-colors">
-                        <div className="px-4 py-4 sm:px-6">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center">
-                              <div className="flex-shrink-0 bg-yellow-100 rounded-md p-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                              </div>
-                              <div className="ml-4">
-                                <p className="text-sm font-medium text-indigo-600 truncate">{expense.description}</p>
-                                <p className="text-sm text-gray-500">
-                                  Paid to {expense.paid_to} • {expense.group} • {expense.date}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="ml-2 flex-shrink-0 flex flex-col items-end">
-                              <p className="text-sm font-semibold text-gray-900">₹{expense.amount_owed.toFixed(2)}</p>
-                            </div>
-                          </div>
-                          <div className="mt-2 flex justify-end">
-                            <div className="flex space-x-2">
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                You owe ₹{expense.amount_owed.toFixed(2)}
-                              </span>
-                              <button 
-                                onClick={() => settleExpense(expense.expense_id)}
-                                className="inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-indigo-100 text-indigo-800 hover:bg-indigo-200 transition-colors"
-                              >
-                                Settle up
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div className="px-4 py-12 text-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">All settled up!</h3>
-                    <p className="mt-1 text-sm text-gray-500">You don't owe anyone any money.</p>
+            <div className="space-y-4">
+  <h3 className="text-lg font-semibold text-gray-900">Expenses You Owe</h3>
+  <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+    {expenses.userOwes.length > 0 ? (
+      <ul className="divide-y divide-gray-100">
+        {expenses.userOwes.map((expense) => (
+          <li key={`owe-${expense.expense_id}`} className="hover:bg-gray-50/50 transition-colors">
+            <div className="px-5 py-4">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <div className={`flex-shrink-0 rounded-lg p-2.5 ${
+                    expense.status === 'requested' ? 'bg-blue-50' :
+                    expense.status === 'pending' ? 'bg-amber-50' : 
+                    expense.status === 'confirmed' ? 'bg-emerald-50' :
+                    'bg-gray-50'
+                  }`}>
+                    {(() => {
+                      switch(expense.status) {
+                        case 'pending':
+                          return (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          );
+                        case 'requested':
+                          return (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          );
+                        case 'confirmed':
+                          return (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          );
+                        default:
+                          return (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          );
+                      }
+                    })()}
                   </div>
-                )}
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-gray-900 line-clamp-1">{expense.description}</p>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
+                      <span>Paid to {expense.paid_to}</span>
+                      <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                      <span>{expense.group}</span>
+                      <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                      <span>{expense.date}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex-shrink-0">
+                  <p className="text-base font-semibold text-gray-900">₹{expense.amount_owed.toFixed(2)}</p>
+                </div>
+              </div>
+              
+              <div className="mt-3 pt-3 flex justify-between items-center border-t border-gray-100">
+                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                  expense.status === 'requested' ? 'bg-blue-50 text-blue-700' :
+                  expense.status === 'pending' ? 'bg-amber-50 text-amber-700' : 
+                  expense.status === 'confirmed' ? 'bg-emerald-50 text-emerald-700' :
+                  'bg-gray-50 text-gray-700'
+                }`}>
+                  You owe ₹{expense.amount_owed.toFixed(2)}
+                </span>
+
+                <button
+                  onClick={() => {
+                    if (expense.status === 'pending') {
+                      requestSettlement(expense.expense_id);
+                    }
+                  }}
+                  className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+                    expense.status === 'pending'
+                      ? 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+                      : expense.status === 'requested'
+                      ? 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+                      : expense.status === 'confirmed' ?
+                       'bg-emerald-100 text-emerald-800' 
+                      : 'bg-gray-100 text-gray-800 cursor-default'
+                  }`}
+                  disabled={expense.status !== 'pending'}
+                >
+                  {expense.status === 'pending'
+                    ? 'Settle up'
+                    : expense.status === 'requested'
+                    ? 'Request sent'
+                    : 'Settled'}
+                </button>
               </div>
             </div>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <div className="px-4 py-10 text-center">
+        <div className="mx-auto h-16 w-16 flex items-center justify-center rounded-full bg-gray-50 mb-3">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h3 className="text-sm font-medium text-gray-900">All settled up!</h3>
+        <p className="mt-1 text-sm text-gray-500">You don't owe anyone any money.</p>
+      </div>
+    )}
+  </div>
+</div>
 
             {/* Expenses You're Owed */}
-            <div>
-              <h3 className="text-md font-medium text-gray-700 mb-3">Expenses You're Owed</h3>
-              <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-                {expenses.userPaid.length > 0 ? (
-                  <ul className="divide-y divide-gray-200">
-                    {expenses.userPaid.map((expense) => (
-                      <li key={`paid-${expense.expense_id}-${expense.user_owes}`} className="hover:bg-gray-50 transition-colors">
-                        <div className="px-4 py-4 sm:px-6">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center">
-                              <div className="flex-shrink-0 bg-green-100 rounded-md p-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                              </div>
-                              <div className="ml-4">
-                                <p className="text-sm font-medium text-indigo-600 truncate">{expense.description}</p>
-                                <p className="text-sm text-gray-500">
-                                  {expense.user_owes} owes you • {expense.group} • {expense.date}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="ml-2 flex-shrink-0 flex flex-col items-end">
-                              <p className="text-sm font-semibold text-gray-900">₹{expense.amount_owed.toFixed(2)}</p>
-                            </div>
-                          </div>
-                          <div className="mt-2 flex justify-end">
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              You lent ₹{expense.amount_owed.toFixed(2)}
-                            </span>
-                          </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div className="px-4 py-12 text-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">No pending payments</h3>
-                    <p className="mt-1 text-sm text-gray-500">No one owes you any money.</p>
+            <div className="space-y-4">
+  <h3 className="text-lg font-semibold text-gray-900">Expenses You're Owed</h3>
+  <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+    {expenses.userPaid.length > 0 ? (
+      <ul className="divide-y divide-gray-100">
+        {expenses.userPaid.map((expense) => (
+          <li key={`paid-${expense.expense_id}-${expense.user_owes}`} className="hover:bg-gray-50/50 transition-colors">
+            <div className="px-5 py-4">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <div className={`flex-shrink-0 rounded-lg p-2.5 ${
+                    expense.status === 'confirmed' ? 'bg-emerald-50' :
+                    expense.status === 'pending' ? 'bg-amber-50' :
+                    expense.status === 'requested' ? 'bg-blue-50' :
+                   'bg-gray-50'
+                  }`}>
+                    {(() => {
+                      switch(expense.status) {
+                        case 'pending':
+                          return (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          );
+                        case 'requested':
+                          return (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          );
+                        case 'confirmed':
+                          return (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          );
+                       
+                        default:
+                          return (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          );
+                      }
+                    })()}
                   </div>
-                )}
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-gray-900 line-clamp-1">{expense.description}</p>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
+                      <span>{expense.user_owes} owes you</span>
+                      <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                      <span>{expense.group}</span>
+                      <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                      <span>{expense.date}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex-shrink-0">
+                  <p className="text-base font-semibold text-gray-900">₹{expense.amount_owed.toFixed(2)}</p>
+                </div>
+              </div>
+              
+              <div className="mt-3 pt-3 flex justify-between items-center border-t border-gray-100">
+                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                  expense.status === 'confirmed' ? 'bg-emerald-50 text-emerald-700' :
+                  expense.status === 'pending' ? 'bg-amber-50 text-amber-700' :
+                  expense.status === 'requested' ? 'bg-blue-50 text-blue-700' :
+                  'bg-gray-50 text-gray-700'
+                }`}>
+                  You lent ₹{expense.amount_owed.toFixed(2)}
+                </span>
+
+                <div className="flex items-center gap-2">
+                  {expense.status === 'pending' && (
+                    <button className="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors">
+                      Pending
+                    </button>
+                  )}
+
+                  {expense.status === 'requested' && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => confirmSettlement(expense.expense_id, expense.user_owes)}
+                        className="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
+                      >
+                        Confirm
+                      </button>
+                      <button
+                        onClick={() => rejectSettlement(expense.expense_id, expense.user_owes)}
+                        className="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  )}
+
+                  {expense.status === 'confirmed' && (
+                    <span className="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-violet-50 text-violet-700">
+                      Settled
+                    </span>
+                  )}
+
+                  {expense.status === 'REJECTED' && (
+                    <span className="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-amber-50 text-amber-700">
+                      Rejected
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <div className="px-4 py-10 text-center">
+        <div className="mx-auto h-16 w-16 flex items-center justify-center rounded-full bg-gray-50 mb-3">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h3 className="text-sm font-medium text-gray-900">No pending payments</h3>
+        <p className="mt-1 text-sm text-gray-500">No one owes you any money.</p>
+      </div>
+    )}
+  </div>
+</div>
           </div>
         ) : (
           <div className="mt-8">

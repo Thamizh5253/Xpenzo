@@ -8,6 +8,7 @@ import google.generativeai as genai
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from decouple import config
+import re
 
 
 
@@ -20,7 +21,9 @@ api_key = config('API_KEY')
 genai.configure(api_key=api_key)
 
 # Initialize the GenerativeModel
-model = genai.GenerativeModel('gemini-1.5-pro')
+# model = genai.GenerativeModel('gemini-1.5-pro')
+model = genai.GenerativeModel('gemini-2.0-flash')
+
 
 
 
@@ -40,11 +43,25 @@ def extract_receipt_data_with_gemini(receipt_text):
     {receipt_text}
     """
 
+
     try:
         response = model.generate_content(prompt)
+        print(f"Gemini Response: {response}")
+
+        # Extract raw text
         raw_response = response.text.strip()
-        raw_response = raw_response.replace("```", '"').replace("json", "")
+
+        # Remove triple backticks and optional 'json' tag
+        raw_response = re.sub(r'^```json\s*|\s*```$', '', raw_response.strip(), flags=re.MULTILINE).strip()
+
+        # Remove leading/trailing quotes or control characters
+        raw_response = raw_response.strip('"').strip()
+
+        print(f"Cleaned Gemini Response: {raw_response}")
+
+        # Load JSON
         structured_data = json.loads(raw_response)
+
     except json.JSONDecodeError as e:
         logger.error(f"Failed to parse Gemini response: {e}")
         structured_data = {
@@ -54,6 +71,7 @@ def extract_receipt_data_with_gemini(receipt_text):
             "Amount": "0.00",
             "Payment Mode": "Unknown"
         }
+
     except Exception as e:
         logger.error(f"Error in Gemini API call: {e}")
         structured_data = {
