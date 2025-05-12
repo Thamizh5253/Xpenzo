@@ -217,18 +217,9 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 
 
-# CLOUDINARY_STORAGE = {
-#     'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME' ,default='dttavn4d9'),
-#     'API_KEY': config('CLOUDINARY_API_KEY' ,default='245266647115289'),
-#     'API_SECRET': config('CLOUDINARY_API_SECRET' , default='7qGGFPmYnaDsQjgG8qJA3-G2eJw'),
-# }
-# DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-
-
 # settings.py
 import cloudinary
-import cloudinary.uploader
-import cloudinary.api	
+
 cloudinary.config( 
   	cloud_name = config('CLOUDINARY_CLOUD_NAME'),
   	api_key = config('CLOUDINARY_API_KEY'),
