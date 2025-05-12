@@ -37,7 +37,7 @@ class ExpenseGroupSerializer(serializers.ModelSerializer):
         model = ExpenseGroup
         fields = [
             'id', 'group_name', 'created_by', 'created_at', 'updated_at',
-            'currency', 'description', 'avatar', 'members', 'all_members'
+            'currency', 'description', 'avatar_url', 'members', 'all_members'
         ]
 
 

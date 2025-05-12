@@ -22,6 +22,8 @@ from users.models import UserProfile
 from django.db import transaction
 from datetime import datetime
 
+from cloudinary.uploader import upload
+from cloudinary.uploader import destroy
 
 
 @api_view(['POST'])
@@ -29,6 +31,7 @@ from datetime import datetime
 def create_group(request):
     data = request.data.copy()
     members_data = data.pop('members', [])
+    group_image = request.FILES.get('avatar')
 
     if isinstance(members_data, str):
         members_data = json.loads(members_data)
@@ -39,23 +42,58 @@ def create_group(request):
         group = serializer.save(created_by=request.user)
         GroupMember.objects.create(group=group, user=request.user, is_admin=True)
 
-        data_list = json.loads(members_data[0])
-
-        for member in data_list:
-            user_id = member.get('user_id')
-            nickname = member.get('nickname', '')
-            is_admin = member.get('is_admin', False)
-
+        if group_image:
             try:
-                user = User.objects.get(id=user_id)
-                if user != request.user:
-                    GroupMember.objects.create(group=group, user=user, nickname=nickname, is_admin=is_admin)
-            except User.DoesNotExist:
-                continue
+                upload_result = upload(group_image,
+                                       folder="Xpenzo/group_avatar",  # Specify your folder path
+                    public_id=f"group_{group.id}",  # Unique identifier
+                    overwrite=True,
+                    resource_type="image",
+                    transformation=[
+                        {'width': 500, 'height': 500, 'crop': "fill"},
+                        {'quality': "auto"}
+                    ]
+                )
+                if 'secure_url' in upload_result:
+                    group.avatar_url = upload_result['secure_url']
+                    group.save()
+                else:
+                    return Response(
+                        {"error": "Cloudinary upload failed - no secure URL returned"},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                    )
+            except Exception as e:
+                return Response(
+                    {"error": f"Image upload failed: {str(e)}"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+
+        try:
+            data_list = json.loads(members_data[0] if isinstance(members_data, list) else members_data)
+            
+            for member in data_list:
+                user_id = member.get('user_id')
+                nickname = member.get('nickname', '')
+                is_admin = member.get('is_admin', False)
+
+                try:
+                    user = User.objects.get(id=user_id)
+                    if user != request.user:
+                        GroupMember.objects.create(group=group, user=user, nickname=nickname, is_admin=is_admin)
+                except User.DoesNotExist:
+                    continue
+                    
+        except (json.JSONDecodeError, IndexError, TypeError) as e:
+            return Response(
+                {"error": f"Invalid members data: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         return Response(ExpenseGroupSerializer(group).data, status=status.HTTP_201_CREATED)
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
@@ -64,19 +102,48 @@ def delete_group(request, group_id):
         group = ExpenseGroup.objects.get(id=group_id)
         
         # Check if the user is an admin of the group
-        
         membership = GroupMember.objects.get(group=group, user=request.user)
         if not membership.is_admin:
-                return Response({"error": "Only an admin can delete this group."},
-                                status=status.HTTP_403_FORBIDDEN)
-       
+            return Response(
+                {"error": "Only an admin can delete this group."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Delete the associated image from Cloudinary if it exists
+        if group.avatar_url:
+            try:
+                # Extract public_id from the URL
+                import re
+                match = re.search(r'Xpenzo/group_avatar/(group_\d+|group_[a-f0-9-]+)', group.avatar_url)
+                if match:
+                    public_id = match.group(1)
+                    # Delete the specific image
+                    destroy(public_id)
+                    # Optional: delete all derived resources too
+                    # delete_resources([public_id], resource_type="image")
+            except Exception as e:
+                # Log the error but continue with group deletion
+                import logging
+                logging.error(f"Failed to delete Cloudinary image: {str(e)}")
 
         # Delete the group
         group.delete()
-        return Response({"message": "Group deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+        return Response(
+            {"message": "Group deleted successfully."},
+            status=status.HTTP_204_NO_CONTENT
+        )
 
     except ExpenseGroup.DoesNotExist:
-        return Response({"error": "Group not found."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(
+            {"error": "Group not found."},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except GroupMember.DoesNotExist:
+        return Response(
+            {"error": "You are not a member of this group."},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

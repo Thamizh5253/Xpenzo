@@ -11,7 +11,7 @@ class ExpenseGroup(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     currency = models.CharField(max_length=3, default='INR')  # ISO currency codes
     description = models.TextField(blank=True, null=True)
-    avatar = models.ImageField(upload_to='group_avatars/', null=True, blank=True)
+    avatar_url = models.URLField(max_length=500, blank=True, null=True)  # Changed from ImageField
 
     def __str__(self):
         return self.group_name

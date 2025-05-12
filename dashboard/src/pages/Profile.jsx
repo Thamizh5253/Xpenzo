@@ -75,13 +75,13 @@ const ProfileForm = () => {
             });
 
             if (response.status === 200) {
-                showSuccessToast("Profile saved successfully!", toastId);
+                showSuccessToast("Profile saved successfully!");
                 setOriginalData(formData);
                 if (!isEditing) {
                     setTimeout(() => navigate("/dashboard"), 2000);
                 }
             } else {
-                showErrorToast("Failed to save profile", toastId);
+                showErrorToast("Failed to save profile");
             }
         } catch (error) {
             console.error("Error saving profile:", error);

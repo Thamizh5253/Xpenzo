@@ -21,6 +21,8 @@ from django.views.decorators.csrf import csrf_exempt
 # views.py
 from .serializers import UserMiniSerializer
 
+from decouple import config
+
 # Generate JWT tokens manually
 def get_tokens_for_user(user):
     refresh = RefreshToken.for_user(user)
@@ -125,8 +127,8 @@ def forgot_password(request):
         token = str(uuid.uuid4())
         cache.set(f'password_reset_{token}', user.username, timeout=1800)  # Store token -> username
         cache.set(cache_key, True, timeout=1800)  # Store flag that reset was requested
-
-        reset_link = f"http://localhost:5173/reset-password?token={token}"
+        host = config('FRONTEND_URL')
+        reset_link = f"{host}/reset-password?token={token}"
 
         # Send email in background
         send_password_reset_email.delay(email, reset_link)

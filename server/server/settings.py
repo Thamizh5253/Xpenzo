@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     'askai',
     'expense_scheduler',
     'split',
+    'cloudinary',
+    'cloudinary_storage',
 
 
 ]
@@ -101,10 +103,27 @@ REST_FRAMEWORK = {
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+# Use PostgreSQL with Supabase
+
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',  # Your original SQLite file
+#     }
+# }
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': config('DB_NAME', default='postgres'),
+        'USER': config('DB_USER', default='postgres'),
+        'PASSWORD': config('DB_PASSWORD'),
+        'HOST': config('DB_HOST'),  # Supabase host
+        'PORT': config('DB_PORT', default='5432'),
+        'OPTIONS': {
+            'sslmode': config('DB_SSL_MODE', default='require'),  # Supabase requires SSL
+        },
     }
 }
 
@@ -198,16 +217,20 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 
 
-
-
-# # ASGI_APPLICATION = 'server.routing.application'
-# ASGI_APPLICATION = 'server.asgi.application'
-
-# CHANNEL_LAYERS = {
-#     "default": {
-#         "BACKEND": "channels_redis.core.RedisChannelLayer",
-#         "CONFIG": {
-#             "hosts": [("127.0.0.1", 6379)],
-#         },
-#     },
+# CLOUDINARY_STORAGE = {
+#     'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME' ,default='dttavn4d9'),
+#     'API_KEY': config('CLOUDINARY_API_KEY' ,default='245266647115289'),
+#     'API_SECRET': config('CLOUDINARY_API_SECRET' , default='7qGGFPmYnaDsQjgG8qJA3-G2eJw'),
 # }
+# DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+
+# settings.py
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api	
+cloudinary.config( 
+  	cloud_name = config('CLOUDINARY_CLOUD_NAME'),
+  	api_key = config('CLOUDINARY_API_KEY'),
+  	api_secret = config('CLOUDINARY_API_SECRET')
+)
