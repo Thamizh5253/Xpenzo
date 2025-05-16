@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 
 
 
+
 // Success Toast (White with green accent)
 export const showSuccessToast = (message) => {
   toast.success(message, {
@@ -96,3 +97,4 @@ export const showToastWithLoading = async (promise, { loadingMsg = 'Processing..
     throw error; // rethrow if needed
   }
 };
+

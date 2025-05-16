@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
+import  { useEffect, useState } from "react";
 import axios from "axios";
 import AddScheduleModal from "./AddSchedule";
 import BASE_URL from "../../config";
-import { FaTrash, FaEdit } from "react-icons/fa";
 import { useAuth } from "../../context/AuthContext"; // Adjust the path as needed
+import { showSuccessToast, showErrorToast } from "../../utils/toaster";
+import RupeeSpinner from "../../components/common/RupeeSpinner";
 
 const ScheduleTable = () => {
   const [schedules, setSchedules] = useState([]);
@@ -45,17 +46,23 @@ const ScheduleTable = () => {
       });
   }, []);
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this schedule?")) return;
-    try {
-      await axios.delete(`${BASE_URL}/scheduler/schedule/delete/${id}/`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      refreshData();
-    } catch (err) {
-      console.error("Failed to delete schedule:", err);
-    }
-  };
+
+const handleDelete = async (id) => {
+  if (!window.confirm("Are you sure you want to delete this schedule?")) return;
+
+  try {
+    await axios.delete(`${BASE_URL}/scheduler/schedule/delete/${id}/`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    
+    showSuccessToast("Schedule deleted successfully!");
+    refreshData();
+  } catch (err) {
+    console.error("Failed to delete schedule:", err);
+    showErrorToast("Failed to delete schedule. Please try again.");
+  }
+};
+
 
   const handleEdit = (id) => {
     const schedule = schedules.find((item) => item.id === id); // Find the schedule by id
@@ -68,7 +75,9 @@ const ScheduleTable = () => {
   const renderCell = (value) => (value === null || value === "" ? "-" : value);
 
   if (loading) {
-    return <div className="text-center py-10 text-gray-500">Loading...</div>;
+    return (
+      <RupeeSpinner/>
+    )
   }
 
   return (

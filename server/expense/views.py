@@ -5,28 +5,11 @@ from rest_framework import status
 from .models import Expense
 from .serializers import ExpenseSerializer
 
-
-
 from datetime import datetime
 from users.models import UserProfile
-from django.core.mail import send_mail
-from django.conf import settings
-from threading import Thread
+from expense.tasks import send_budget_alert_email_task
 
 
-# Function to send email in a separate thread
-def send_budget_alert_email(user_email, username, total_expenses, budget):
-    def email_task():
-        send_mail(
-            'Budget Exceeded Alert',
-            f'Hi {username},\n\nYou have exceeded your monthly budget of {budget}. Your total expenses are now {total_expenses}. Please review your expenses.',
-            settings.DEFAULT_FROM_EMAIL,
-            [user_email],
-            fail_silently=False,
-        )
-    
-    email_thread = Thread(target=email_task)
-    email_thread.start()
 
 # Get all expenses or create a new one
 @api_view(["GET", "POST"])
@@ -44,8 +27,6 @@ def expense_list(request):
         serializer = ExpenseSerializer(data=data)
 
         if serializer.is_valid():
-            
-            
             
             try:
                  # Calculate total expenses for the current month
@@ -72,37 +53,18 @@ def expense_list(request):
             if total_expenses > user_profile.monthly_budget:
                 print("Total expenses exceed budget!")
                 # Send email asynchronously using thread
-                send_budget_alert_email(
+                send_budget_alert_email_task.delay(
                     request.user.email,
                     request.user.username,
                     total_expenses,
                     user_profile.monthly_budget
                 )
 
+
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# Get all expenses or create a new one
-# @api_view(["GET", "POST"])
-# @permission_classes([IsAuthenticated])
-# def expense_list(request):
-#     if request.method == "GET":
-#         expenses = Expense.objects.filter(user=request.user)
-#         serializer = ExpenseSerializer(expenses, many=True)
-#         return Response(serializer.data)
-
-#     if request.method == "POST":
-
-#         data = request.data.copy()
-#         # print(data)
-
-#         data['user'] = request.user.id  # Ensure expense is linked to the logged-in user
-#         serializer = ExpenseSerializer(data=data)
-#         if serializer.is_valid():
-#             serializer.save()
-#             return Response(serializer.data, status=status.HTTP_201_CREATED)
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 # Retrieve, update, or delete an expense

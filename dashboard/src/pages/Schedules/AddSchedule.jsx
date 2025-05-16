@@ -4,6 +4,7 @@ import BASE_URL from "../../config";
 import { X, Calendar, Clock, Repeat, Tag, CreditCard, Info, DollarSign } from "react-feather";
 import { IndianRupee } from "lucide-react";
 import {useAuth} from '../../context/AuthContext'; // Adjust the path as needed
+import { showSuccessToast, showErrorToast } from "../../utils/toaster";
 
 
 const AddScheduleModal = ({ isOpen, onClose, onCreated , onEdited, editData , setSelectedSchedule }) => {
@@ -78,45 +79,48 @@ const AddScheduleModal = ({ isOpen, onClose, onCreated , onEdited, editData , se
     onClose();
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    // const token = localStorage.getItem("accessToken");
 
-    if (!accessToken) {
-      navigate("/login");
-      return;
-    }
-  
-    try {
-      const headers = {
-        Authorization: `Bearer ${accessToken}`,
-      };
-  
-      if (editData?.id) {
-        // Edit existing schedule
-        await axios.post(
-          `${BASE_URL}/scheduler/schedule/update/${editData.id}/`,
-          formData,
-          { headers }
-        );
-      } else {
-        // Create new schedule
-        await axios.post(
-          `${BASE_URL}/scheduler/schedule/create/`,
-          formData,
-          { headers }
-        );
-      }
-  
-      onCreated();
-      onClose();
-      // Reset form and step
-      setFormData(initialFormData);
-      setCurrentStep(1);
-    } catch (err) {
-      console.error("Error submitting schedule:", err);
-    }
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  if (!accessToken) {
+    navigate("/login");
+    return;
+  }
+
+  const headers = {
+    Authorization: `Bearer ${accessToken}`,
   };
+
+  try {
+    if (editData?.id) {
+      // Edit existing schedule
+      await axios.post(
+        `${BASE_URL}/scheduler/schedule/update/${editData.id}/`,
+        formData,
+        { headers }
+      );
+      showSuccessToast("Schedule updated successfully!");
+    } else {
+      // Create new schedule
+      await axios.post(
+        `${BASE_URL}/scheduler/schedule/create/`,
+        formData,
+        { headers }
+      );
+      showSuccessToast("Schedule created successfully!");
+    }
+
+    onCreated();
+    onClose();
+    setFormData(initialFormData);
+    setCurrentStep(1);
+  } catch (err) {
+    console.error("Error submitting schedule:", err);
+    showErrorToast("Error submitting schedule. Please try again.");
+  }
+};
+
   
 
   if (!isOpen) return null;

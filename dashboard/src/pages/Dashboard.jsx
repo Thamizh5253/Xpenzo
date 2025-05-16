@@ -4,13 +4,15 @@ import axios from "axios";
 import ExpenseCapsule from "./ExpenseCapsule";
 import BASE_URL from "../config";
 import {useAuth} from "../context/AuthContext"; // Adjust the path as needed
+import RupeeSpinner from "../components/common/RupeeSpinner";
+import { showSuccessToast ,showErrorToast  } from '../utils/toaster'; // make sure this path matches
 
 
 export default function ExpenseTable() {
   const [expenses, setExpenses] = useState([]);
   const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
-
+  const [Loading , setLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false);
   const [currentExpenseId, setCurrentExpenseId] = useState(null);
   const [refreshCapsule, setRefreshCapsule] = useState(false);
@@ -43,23 +45,28 @@ export default function ExpenseTable() {
   
   const navigate = useNavigate();
 
-  useEffect(() => {
+useEffect(() => {
+  const fetchExpenses = async () => {
     if (!accessToken) {
       navigate("/login");
       return;
     }
 
-    axios
-      .get(`${BASE_URL}/expense/`, {
+    try {
+      const response = await axios.get(`${BASE_URL}/expense/`, {
         headers: { Authorization: `Bearer ${accessToken}` },
-      })
-      .then((response) => setExpenses(response.data))
-      .catch(() => {
-        // localStorage.removeItem("accessToken");
-      clearTokens();
-        navigate("/login");
       });
-  }, [navigate]);
+      setExpenses(response.data);
+      setLoading(false)
+    } catch (error) {
+      clearTokens();
+      navigate("/login");
+    }
+  };
+
+  fetchExpenses();
+}, [navigate, accessToken]);
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -83,6 +90,7 @@ export default function ExpenseTable() {
           setExpenses((prev) =>
             prev.map((exp) => (exp.id === currentExpenseId ? response.data : exp))
           );
+          showSuccessToast("Expense Edited Successfully")
         } else {
           setExpenses((prev) => [...prev, response.data]);
         }
@@ -92,7 +100,10 @@ export default function ExpenseTable() {
         setRefreshCapsule((prev) => !prev);
         setNewExpense({ amount: "", category: "", date: "", description: "", payment_method: "" });
       })
-      .catch((err) => console.error("Error saving expense:", err));
+      .catch((err) => {
+        showErrorToast('Failed to save. Please try again.');
+        console.error("Error saving expense:", err)
+  });
   };
 
   const handleEdit = (exp) => {
@@ -103,11 +114,10 @@ export default function ExpenseTable() {
   };
 
   const handleDelete = async (id) => {
+    
     const confirmDelete = window.confirm("Are you sure you want to delete this item?");
     if (!confirmDelete) return;
-  
-    // const token = localStorage.getItem("accessToken");
-  
+    
 
     try {
       const response = await axios.delete(`${BASE_URL}/expense/${id}/`, {
@@ -117,13 +127,17 @@ export default function ExpenseTable() {
       });
 
       if (response.status === 204 || response.status === 200) {
+        showSuccessToast("Expense Deleted Successfully")
         setExpenses((prev) => prev.filter((exp) => exp.id !== id));
         setRefreshCapsule((prev) => !prev);
       } else {
+        showErrorToast('Failed to delete expense!')
         console.error("Failed to delete expense:", response);
       }
 
     } catch (err) {
+      showErrorToast('Failed to delete expense!')
+
       console.error("Error deleting expense:", err);
     }
 
@@ -145,10 +159,25 @@ export default function ExpenseTable() {
  
 
   if (error) return <div className="text-red-500">{error}</div>;
-  // if (expenses.length === 0) return <div className="text-gray-500">Loading...</div>;
+
+  if (Loading) {
+    return (
+     <RupeeSpinner/>
+    );
+  }
 
   return (
     <div className="p-4">
+
+       {expenses.length === 0 ? (
+  <div className="flex flex-col items-center justify-center p-6 bg-gray-100 rounded-lg shadow-md">
+  <h2 className="text-xl font-semibold text-gray-700">No expenses found</h2>
+  <p className="text-gray-500 mt-2">Add a new expense to get started!</p>
+</div>
+
+) : (
+ 
+
       <div className="p-6 bg-gray-100 min-h-screen">
      
 
@@ -156,11 +185,7 @@ export default function ExpenseTable() {
      <div className="flex justify-end gap-4 mb-6">
      <ExpenseCapsule  refreshCapsule={refreshCapsule} />
 
-</div>
-
-
-
-
+     </div>
 
 <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
   <div className="relative">
@@ -245,102 +270,106 @@ export default function ExpenseTable() {
   }} />
 </div>
     </div>
-
+)}
 
     {showModal && (
-  <div className="fixed inset-0 flex justify-center items-start pt-16 z-50">
-    <div className="bg-white p-6 rounded-lg shadow-lg border border-gray-200 w-96">
-      <h2 className="text-xl font-semibold mb-4">Create New Expense</h2>
+  <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/20">
+  <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm relative">
+    <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">Edit Expense</h2>
 
-      <div className="space-y-4">
-        {/* Amount Field */}
-        <div>
-          <label className="block text-sm text-gray-600 mb-1">Amount</label>
-          <input
-            type="number"
-            name="amount"
-            value={newExpense.amount}
-            onChange={handleInputChange}
-            className="w-full p-2 border rounded"
-            placeholder="0.00"
-          />
-        </div>
-
-        {/* Date Field */}
-        <div>
-          <label className="block text-sm text-gray-600 mb-1">Date</label>
-          <input
-            type="date"
-            name="date"
-            value={newExpense.date}
-            onChange={handleInputChange}
-            className="w-full p-2 border rounded"
-          />
-        </div>
-
-        {/* Category Dropdown */}
-        <div>
-          <label className="block text-sm text-gray-600 mb-1">Category</label>
-          <select
-            name="category"
-            value={newExpense.category}
-            onChange={handleInputChange}
-            className="w-full p-2 border rounded bg-white"
-          >
-            <option value="">Select Category</option>
-            {CATEGORIES.map((cat) => (
-              <option key={cat.value} value={cat.value}>{cat.label}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Payment Method Dropdown */}
-        <div>
-          <label className="block text-sm text-gray-600 mb-1">Payment Method</label>
-          <select
-            name="payment_method"
-            value={newExpense.payment_method}
-            onChange={handleInputChange}
-            className="w-full p-2 border rounded bg-white"
-          >
-            <option value="">Select Method</option>
-            {PAYMENT_METHODS.map((method) => (
-              <option key={method.value} value={method.value}>{method.label}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Description Field */}
-        <div>
-          <label className="block text-sm text-gray-600 mb-1">Description</label>
-          <input
-            type="text"
-            name="description"
-            value={newExpense.description}
-            onChange={handleInputChange}
-            className="w-full p-2 border rounded"
-            placeholder="Optional notes"
-          />
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex justify-end space-x-2 pt-2">
-          <button
-            onClick={closeModal}
-            className="px-4 py-2 text-gray-700 border rounded"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleCreateExpense}
-            className="px-4 py-2 bg-blue-500 text-white rounded"
-          >
-            Save
-          </button>
-        </div>
-      </div>
+    {/* Amount Field */}
+    <div className="mb-3">
+      <label className="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+      <input
+        type="number"
+        name="amount"
+        value={newExpense.amount}
+        onChange={handleInputChange}
+        className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
+        placeholder="Enter amount"
+      />
     </div>
+
+    {/* Date Field */}
+    <div className="mb-3">
+      <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+      <input
+        type="date"
+        name="date"
+        value={newExpense.date}
+        onChange={handleInputChange}
+        className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
+      />
+    </div>
+
+    {/* Category Dropdown */}
+    <div className="mb-3">
+      <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+      <select
+        name="category"
+        value={newExpense.category}
+        onChange={handleInputChange}
+        className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all bg-white text-sm"
+      >
+        <option value="">Select Category</option>
+        {CATEGORIES.map((cat) => (
+          <option key={cat.value} value={cat.value}>
+            {cat.label}
+          </option>
+        ))}
+      </select>
+    </div>
+
+    {/* Payment Method Dropdown */}
+    <div className="mb-3">
+      <label className="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
+      <select
+        name="payment_method"
+        value={newExpense.payment_method}
+        onChange={handleInputChange}
+        className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all bg-white text-sm"
+      >
+        <option value="">Select Payment Method</option>
+        {PAYMENT_METHODS.map((method) => (
+          <option key={method.value} value={method.value}>
+            {method.label}
+          </option>
+        ))}
+      </select>
+    </div>
+
+    {/* Description Field */}
+    <div className="mb-4">
+      <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+      <input
+        type="text"
+        name="description"
+        value={newExpense.description}
+        onChange={handleInputChange}
+        className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
+        placeholder="Add a note (optional)"
+      />
+    </div>
+
+    {/* Action Buttons */}
+    <div className="flex justify-between gap-2">
+      <button
+        onClick={closeModal}
+        className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 focus:outline-none transition-all text-sm"
+      >
+        Cancel
+      </button>
+      <button
+        onClick={handleCreateExpense}
+        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all text-sm"
+      >
+        Save Changes
+      </button>
+    </div>
+
+    {error && <div className="text-red-500 text-center mt-2 text-sm">{error}</div>}
   </div>
+</div>
 )}
 
     </div>

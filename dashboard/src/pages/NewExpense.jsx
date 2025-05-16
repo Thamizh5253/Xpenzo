@@ -4,6 +4,7 @@ import axios from "axios";
 import BASE_URL from "../config";
 import { useAuth } from "../context/AuthContext";
 import { FaCamera } from "react-icons/fa"; // Import camera icon from react-icons
+import { showToastWithLoading ,showSuccessToast , showErrorToast } from '../utils/toaster'; // make sure this path matches
 
 export default function CreateExpense() {
   const [error, setError] = useState(null);
@@ -39,31 +40,44 @@ export default function CreateExpense() {
     setNewExpense((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleCreateExpense = () => {
-    if (!accessToken) {
-      navigate("/login");
+const handleCreateExpense = async () => {
+  if (!accessToken) {
+    navigate("/login");
+    return;
+  }
+
+  try {
+    const response = await axios.post(`${BASE_URL}/expense/`, newExpense, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      validateStatus: () => true, // allow handling all response statuses manually
+    });
+
+    if (response.status === 422) {
+      showErrorToast('Complete your profile')
+      navigate("/profile");
       return;
     }
 
-    axios
-      .post(`${BASE_URL}/expense/`, newExpense, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      })
-      .then(() => {
-        setNewExpense({
-          amount: "",
-          category: "",
-          date: "",
-          description: "",
-          payment_method: "",
-        });
-        navigate("/");
-      })
-      .catch((err) => {
-        console.error("Error saving expense:", err);
-        setError("Failed to save expense. Please try again.");
+    if (response.status >= 200 && response.status < 300) {
+      setNewExpense({
+        amount: "",
+        category: "",
+        date: "",
+        description: "",
+        payment_method: "",
       });
-  };
+      navigate("/");
+    } else {
+      setError("Failed to save expense. Please try again.");
+      console.error("Unexpected response:", response);
+    }
+
+  } catch (error) {
+    console.error("Error saving expense:", error);
+    setError("An error occurred. Please try again.");
+  }
+};
+
 
   const handleScanClick = () => {
     navigate("/ocr");

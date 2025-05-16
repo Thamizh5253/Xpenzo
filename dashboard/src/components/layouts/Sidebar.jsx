@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, BarChart, PlusCircle, Scan, Info, Menu  ,User ,Bot ,CalendarClock , Split} from "lucide-react";
+import { Home, BarChart, PlusCircle,  Menu   ,Bot ,CalendarClock , Split} from "lucide-react";
 const Sidebar = ({ isOpen, toggleSidebar }) => {
   const location = useLocation();
 
@@ -7,11 +7,8 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     { name: "Home", icon: <Home size={20} />, path: "/dashboard" },
     { name: "Analysis", icon: <BarChart size={20} />, path: "/charts" },
     { name: "New Expense", icon: <PlusCircle size={20} />, path: "/new-expense" },
-    // { name: "Scan Bills", icon: <Scan size={20} />, path: "/ocr" },
     {name:"Schedules", icon:<CalendarClock size={20} />, path:"/schedules"},
     { name: "ASKai", icon: <Bot size={20} />, path: "/askai" },
-    { name: "Profile", icon: <User size={20} />, path: "/profile" },
-    // { name: "About", icon: <Info size={20} />, path: "/about" },
     { name: "Split", icon: <Split size={20} />, path: "/split" },
   ];
   return (

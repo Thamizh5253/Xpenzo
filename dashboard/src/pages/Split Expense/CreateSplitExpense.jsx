@@ -4,7 +4,7 @@ import BASE_URL from '../../config';
 import { showSuccessToast, showErrorToast } from "../../utils/toaster";
 import { useAuth } from '../../context/AuthContext';
 
-const CreateSplitExpenseModal = ({ isOpen, onClose }) => {
+const CreateSplitExpenseModal = ({ isOpen, onClose ,groups}) => {
   const [formData, setFormData] = useState({
     group_id: '',
     amount: '',
@@ -16,9 +16,7 @@ const CreateSplitExpenseModal = ({ isOpen, onClose }) => {
     splits: []
   });
   
-  const [groups, setGroups] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isGroupsLoading, setIsGroupsLoading] = useState(false);
   const { accessToken } = useAuth();
   const [members, setMembers] = useState([]);
   const [totalPercentage, setTotalPercentage] = useState(0);
@@ -36,27 +34,6 @@ const CreateSplitExpenseModal = ({ isOpen, onClose }) => {
     }
   }, [formData.splits, formData.split_type]);
 
-  // Fetch groups from the server
-  useEffect(() => {
-    const fetchGroups = async () => {
-      try {
-        setIsGroupsLoading(true);
-        const response = await axios.get(`${BASE_URL}/split/groups/`, {
-          headers: { Authorization: `Bearer ${accessToken}` }
-        });
-        setGroups(response.data);
-      } catch (error) {
-        console.error('Error fetching groups:', error);
-        showErrorToast('Failed to load groups');
-      } finally {
-        setIsGroupsLoading(false);
-      }
-    };
-
-    if (isOpen) {
-      fetchGroups();
-    }
-  }, [isOpen, accessToken]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -265,9 +242,8 @@ const CreateSplitExpenseModal = ({ isOpen, onClose }) => {
               {/* Group Selection */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Group</label>
-                {isGroupsLoading ? (
-                  <div className="animate-pulse h-12 bg-gray-100 rounded-lg"></div>
-                ) : (
+                 
+                 
                   <select
                     name="group_id"
                     className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all"
@@ -282,7 +258,7 @@ const CreateSplitExpenseModal = ({ isOpen, onClose }) => {
                       </option>
                     ))}
                   </select>
-                )}
+                
               </div>
 
               {/* Only show other fields if group is selected */}

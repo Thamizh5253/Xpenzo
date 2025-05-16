@@ -199,9 +199,9 @@ EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.gmail.com"  # or your email provider's SMTP server
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = "lazytomkitten@gmail.com"
-EMAIL_HOST_PASSWORD = "dayh wluh newi nyul"  # use an app password if using Gmail
-DEFAULT_FROM_EMAIL = "lazytomkitten@gmail.com"
+EMAIL_HOST_USER =config('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')  
+DEFAULT_FROM_EMAIL = config('EMAIL_HOST_USER')  
 COMPANY_NAME= "Xpenzo"  # Replace with your company name
 
 CACHES = {

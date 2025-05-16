@@ -23,34 +23,36 @@ from .serializers import UserMiniSerializer
 
 from decouple import config
 
-# Generate JWT tokens manually
-def get_tokens_for_user(user):
-    refresh = RefreshToken.for_user(user)
-    return {
-        "refresh": str(refresh),
-        "access": str(refresh.access_token),
-    }
+from .tokens import get_tokens_for_user
+
 
 # Register API
 @api_view(["POST"])
 def register_user(request):
+    # Check if user with email already exists
+    email = request.data.get('email')
+    if User.objects.filter(email=email).exists():
+        return Response(
+            {"error": "User with this email already exists"}, 
+            status=status.HTTP_409_CONFLICT
+        )
+    
+    # Check if username already exists
+    username = request.data.get('username')
+    if User.objects.filter(username=username).exists():
+        return Response(
+            {"error": "Username already taken"}, 
+            status=status.HTTP_409_CONFLICT
+        )
+    
     serializer = UserSerializer(data=request.data)
     if serializer.is_valid():
         user = serializer.save()
-        return Response({"message": "User created successfully"}, status=status.HTTP_201_CREATED)
+        return Response(
+            {"message": "Registration successful"}, 
+            status=status.HTTP_201_CREATED
+        )
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-# Login API
-# @api_view(["POST"])
-# def login_user(request):
-#     username = request.data.get("username")
-#     password = request.data.get("password")
-#     user = authenticate(request, username=username, password=password)
-
-#     if user is not None:
-#         tokens = get_tokens_for_user(user)
-#         return Response(tokens, status=status.HTTP_200_OK)
-#     return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
 @api_view(["POST"])
 def login_user(request):

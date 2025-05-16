@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import BASE_URL from '../config';
 import {useAuth}  from '../context/AuthContext'; // Adjust the path as needed
-
+import RupeeSpinner from '../components/common/RupeeSpinner';
 const ChatBox = () => {
   const [messages, setMessages] = useState([]);
   const [question, setQuestion] = useState('');
@@ -130,12 +130,13 @@ const ChatBox = () => {
         <div className="p-4 border-b border-gray-200 bg-white text-gray-800 text-lg font-semibold rounded-t-lg">
           AskAI Chat
         </div>
-        <div className="flex-1 flex items-center justify-center bg-gray-50">
+        {/* <div className="flex-1 flex items-center justify-center bg-gray-50">
           <div className="flex flex-col items-center">
             <div className="w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full animate-spin mb-2"></div>
             <div className="text-gray-500 text-sm">Loading chat history...</div>
           </div>
-        </div>
+        </div> */}
+<RupeeSpinner/>
       </div>
     );
   }

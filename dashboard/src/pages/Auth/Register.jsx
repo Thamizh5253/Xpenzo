@@ -4,33 +4,56 @@ import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import Headers from "../../components/layouts/AuthHeader";
 import BASE_URL from "../../config";
 import axios from 'axios';
+import { showSuccessToast, showErrorToast } from "../../utils/toaster";
 
 
 const Register = () => {
   const [formData, setFormData] = useState({ username: "", email: "", password: "" });
-  const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
 
-    try {
-      const response = await axios.post(`${BASE_URL}/api/auth/register/`, formData);
-      const data = response.data;
 
-      setMessage("✅ Registration successful! Redirecting...");
-      setTimeout(() => navigate("/login"), 2000);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  
+  try {
+    const response = await axios.post(`${BASE_URL}/api/auth/register/`, formData);
+    
+    // Show success toast and message
+    showSuccessToast(response.data.message || "Registration successful!");
+    
+    // Redirect after delay
+    setTimeout(() => navigate("/login"), 2000);
 
-    } catch (error) {
-      const errorMsg = error.response?.data?.error || "❌ Registration failed";
-      setMessage(errorMsg);
+  } catch (error) {
+    let errorMsg = "Registration failed. Please try again.";
+    
+    // Handle different error cases
+    if (error.response) {
+      if (error.response.status === 409) {
+        // Conflict - user already exists
+        errorMsg = error.response.data?.error || "User already exists";
+      } else if (error.response.status === 400) {
+        // Bad request - validation errors
+        errorMsg = "Validation errors: " + 
+          (error.response.data?.error || 
+           Object.values(error.response.data).join(" ") || 
+           "Please check your input");
+      }
+    } else if (error.request) {
+      errorMsg = "No response from server. Please check your connection.";
     }
-
-  };
+    
+    // Show error and set message
+    showErrorToast(errorMsg);
+    
+    console.error("Registration error:", error);
+  } 
+};
 
   return (
     <>
@@ -90,7 +113,6 @@ const Register = () => {
               Register
             </button>
           </form>
-          {message && <p className="mt-4 text-center text-sm font-medium text-red-500">{message}</p>}
           <p className="mt-4 text-center text-sm">
             Already have an account?{" "}
             <a href="/login" className="text-blue-500 hover:underline">

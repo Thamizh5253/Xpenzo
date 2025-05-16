@@ -8,6 +8,9 @@ from .models import ExpenseGroup, GroupMember
 from .serializers import ExpenseGroupSerializer
 from decimal import Decimal
 
+from expense.models import Expense
+from expense.serializers import ExpenseSerializer
+from expense.tasks import send_budget_alert_email_task
 
 from .models import GroupExpense, ExpenseSplit
 from .serializers import GroupExpenseSerializer, ExpenseSplitSerializer
@@ -204,7 +207,7 @@ def get_group_expenses(request, group_id):
 @permission_classes([IsAuthenticated])
 def create_group_expense(request):
     data = request.data
-    print(data)
+    # print(data)
     # Get the group by ID
     group = get_object_or_404(ExpenseGroup, id=data['group_id'])
     
@@ -223,7 +226,14 @@ def create_group_expense(request):
         'payment_method': data['payment_method'],
         'split_type': data['split_type']
     }
-    
+    current_user_data = {
+        'description':data.get('description'),
+        'date':data.get('date'),
+        'category': data.get('category', 'other'),
+        'payment_method': data['payment_method'],
+        'user':request.user.id
+    }
+
     serializer = GroupExpenseSerializer(data=expense_data)
     if serializer.is_valid():
         expense = serializer.save()
@@ -237,7 +247,8 @@ def create_group_expense(request):
             # Divide the amount equally
             amount_per_member = total_amount / len(members)
             for member in members:
-                print(member.user)
+                # print(member.user)
+                current_user_data['amount'] = str(round(amount_per_member, 2))
                 ExpenseSplit.objects.create(expense=expense, user=member.user, amount_owed=amount_per_member)
 
         elif split_type == 'EXACT':
@@ -250,18 +261,18 @@ def create_group_expense(request):
                     status=400
                 )
           
-
             for member_data in data['splits']:
                 user = get_object_or_404(User, id=member_data['user_id'])
                 amount_owed = Decimal(member_data['amount_owed'])
+                if user == request.user:
+                    current_user_data['amount'] = str(round(amount_owed, 2))
+                    continue
                 ExpenseSplit.objects.create(expense=expense, user=user, amount_owed=amount_owed)
 
         elif split_type == 'PERCENTAGE':
-            # Percent-based splits, sum should be 100
-            # total_percent = sum([split['shares'] for split in data['splits']])
+            
             total_percent = sum([split['percentage'] for split in data['splits'] if split['percentage'] is not None])
 
-            print(total_percent)
             if total_percent != 100:
                 return Response({"detail": "Total percentage must be 100."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -269,6 +280,9 @@ def create_group_expense(request):
                 user = get_object_or_404(User, id=member_data['user_id'])
                 percentage = Decimal(member_data['percentage'])
                 amount_owed = (percentage / 100) * total_amount
+                if user == request.user:
+                    current_user_data['amount'] = str(round(amount_owed, 2))
+                    continue
                 ExpenseSplit.objects.create(expense=expense, user=user, amount_owed=amount_owed, percentage=percentage)
 
 
@@ -286,16 +300,53 @@ def create_group_expense(request):
                 total_shares_decimal = Decimal(str(total_shares))
 
                 amount_owed = (shares_decimal / total_shares_decimal) * total_amount
-
+                if user == request.user:
+                    current_user_data['amount'] = str(round(amount_owed, 2))
+                    continue
                 ExpenseSplit.objects.create(
                     expense=expense,
                     user=user,
                     amount_owed=amount_owed,
                     shares=shares
                 )
-        
+        individual_user_expense_serializer = ExpenseSerializer(data=current_user_data)
 
-        # payer_upi_id = request.user.profile.upi_id  # Adjust this based on your user model
+        if individual_user_expense_serializer.is_valid():
+            
+            try:
+                 # Calculate total expenses for the current month
+                 current_month = datetime.now().month
+                 current_year = datetime.now().year
+                 total_expenses = sum(
+                 exp.amount for exp in Expense.objects.filter(
+                    user=request.user,
+                    date__month=current_month,
+                    date__year=current_year
+                )
+            )
+                 user_profile = UserProfile.objects.get(user=request.user)
+                 individual_user_expense_serializer.save()
+            except UserProfile.DoesNotExist:
+            # If UserProfile does not exist, return a response to update the profile
+                 return Response(
+                {"detail": "User profile not found. Please update your profile."},
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY
+            )
+            # user_profile = UserProfile.objects.get(user=request.user)
+            print("Total expenses for the month:", total_expenses , "Monthly budget:", user_profile.monthly_budget)
+            # Check if total exceeds budget
+            if total_expenses > user_profile.monthly_budget:
+                print("Total expenses exceed budget!")
+                # Send email asynchronously using thread
+                send_budget_alert_email_task.delay(
+                    request.user.email,
+                    request.user.username,
+                    total_expenses,
+                    user_profile.monthly_budget
+                )
+        else:
+            print("invalid Data")
+
 
         upi_id = request.user.userprofile.upi_id if hasattr(request.user, 'userprofile') else None
 
